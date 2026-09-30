@@ -3,31 +3,73 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Venue Resource Booking System</title>
 
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <title>
+        Venue Resource Booking System
+    </title>
+
+    <link rel="stylesheet" href="/css/style.css" th:href="@{/css/style.css}">
 </head>
 
 <body>
 
     <div class="container">
 
-        <h1>Venue Resource Booking System</h1>
+        <h1>
+            Venue Resource Booking System
+        </h1>
 
         <p>
             A centralized platform for viewing venues,
             checking booking slots and managing venue reservations.
         </p>
 
-        <div class="actions">
 
-            <a href="/register" class="btn">
+        <!-- NOT LOGGED IN -->
+
+        <div class="actions" th:if="${session.userId == null}">
+
+            <a th:href="@{/register}" class="btn">
                 Register
             </a>
 
-            <a href="/login" class="btn">
+            <a th:href="@{/login}" class="btn">
                 Login
             </a>
+
+        </div>
+
+
+        <!-- LOGGED IN -->
+
+        <div th:if="${session.userId != null}">
+
+            <h2>
+                Welcome,
+                <span th:text="${session.userName}">
+                    User
+                </span>!
+            </h2>
+
+            <p>
+                You are successfully logged in.
+            </p>
+
+            <div class="actions">
+
+                <a th:href="@{/venues}" class="btn">
+                    View Venues
+                </a>
+
+                <a th:href="@{/my-bookings}" class="btn">
+                    My Bookings
+                </a>
+
+                <a th:href="@{/logout}" class="btn">
+                    Logout
+                </a>
+
+            </div>
 
         </div>
 
