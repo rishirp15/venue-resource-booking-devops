@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Venue Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <div class="container form-container">
+
+        <h1>Login</h1>
+
+        <p>
+            Login to manage your venue bookings.
+        </p>
+
+        <div class="alert success" th:if="${param.registered}">
+            Registration successful. You can now login.
+        </div>
+
+        <div class="alert success" th:if="${param.logout}">
+            You have been logged out successfully.
+        </div>
+
+        <div class="alert error" th:if="${error}" th:text="${error}">
+        </div>
+
+        <form th:action="@{/login}" method="post">
+
+            <div class="form-group">
+
+                <label for="email">
+                    Email
+                </label>
+
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input type="password" id="password" name="password" placeholder="Enter password" required>
+
+            </div>
+
+            <button type="submit" class="btn">
+                Login
+            </button>
+
+        </form>
+
+        <p class="form-footer">
+            Don't have an account?
+            <a th:href="@{/register}">
+                Register here
+            </a>
+        </p>
+
+        <p>
+            <a th:href="@{/}">
+                Back to Home
+            </a>
+        </p>
+
+    </div>
+
+</body>
+
+</html>
