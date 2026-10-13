@@ -29,6 +29,8 @@ pipeline {
 
         stage('Docker Check') {
             steps {
+                echo 'Checking Docker installation and engine...'
+
                 withEnv([
                     'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
                 ]) {
@@ -40,20 +42,25 @@ pipeline {
 
         stage('Build and Test') {
             steps {
-                echo 'Building and testing application...'
+                echo 'Building and testing Spring Boot application...'
+
                 bat 'mvn clean verify'
             }
 
             post {
                 always {
-                    junit allowEmptyResults: true,
-                          testResults: 'target/surefire-reports/*.xml,target/failsafe-reports/*.xml'
+                    junit(
+                        allowEmptyResults: true,
+                        testResults: 'target/surefire-reports/*.xml,target/failsafe-reports/*.xml'
+                    )
                 }
             }
         }
 
         stage('Archive WAR') {
             steps {
+                echo 'Archiving generated WAR file...'
+
                 archiveArtifacts(
                     artifacts: 'target/*.war',
                     fingerprint: true
@@ -63,6 +70,8 @@ pipeline {
 
         stage('Docker Build') {
             steps {
+                echo 'Building Docker image...'
+
                 withEnv([
                     'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
                 ]) {
@@ -73,16 +82,21 @@ pipeline {
 
         stage('Verify Docker Image') {
             steps {
+                echo 'Verifying Docker image...'
+
                 withEnv([
                     'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
                 ]) {
                     bat 'docker image inspect %IMAGE_NAME%:%IMAGE_TAG%'
+                    bat 'docker images %IMAGE_NAME%'
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
+                echo 'Publishing Docker image to Docker Hub...'
+
                 withEnv([
                     'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
                 ]) {
@@ -93,20 +107,43 @@ pipeline {
                             passwordVariable: 'DOCKER_TOKEN'
                         )
                     ]) {
-                        bat '''
-                            @echo off
-                            docker tag %IMAGE_NAME%:%IMAGE_TAG% %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%
-                            if errorlevel 1 exit /b 1
+                        powershell '''
+                            $ErrorActionPreference = "Stop"
 
-                            echo Logging into Docker Hub...
-                            echo %DOCKER_TOKEN% | docker login -u %DOCKER_USER% --password-stdin
-                            if errorlevel 1 exit /b 1
+                            $image = "$env:DOCKERHUB_USER/$env:IMAGE_NAME`:$env:IMAGE_TAG"
+                            $localImage = "$env:IMAGE_NAME`:$env:IMAGE_TAG"
 
-                            echo Pushing Docker image...
-                            docker push %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%
-                            if errorlevel 1 exit /b 1
+                            Write-Host "Tagging Docker image..."
 
-                            docker logout
+                            docker tag $localImage $image
+
+                            if ($LASTEXITCODE -ne 0) {
+                                throw "Docker image tagging failed"
+                            }
+
+                            Write-Host "Logging into Docker Hub..."
+
+                            $env:DOCKER_TOKEN |
+                                docker login --username $env:DOCKER_USER --password-stdin
+
+                            if ($LASTEXITCODE -ne 0) {
+                                throw "Docker Hub authentication failed"
+                            }
+
+                            try {
+                                Write-Host "Pushing Docker image..."
+
+                                docker push $image
+
+                                if ($LASTEXITCODE -ne 0) {
+                                    throw "Docker image push failed"
+                                }
+
+                                Write-Host "Docker image successfully published!"
+                            }
+                            finally {
+                                docker logout
+                            }
                         '''
                     }
                 }
@@ -116,15 +153,23 @@ pipeline {
 
     post {
         success {
-            echo 'SUCCESS: Application built, tested, packaged and pushed to Docker Hub.'
+            echo '=========================================='
+            echo 'SUCCESS: CI/CD PIPELINE COMPLETED'
+            echo 'Maven Build: SUCCESS'
+            echo 'Automated Tests: SUCCESS'
+            echo 'WAR Packaging: SUCCESS'
+            echo 'Docker Build: SUCCESS'
+            echo 'Docker Hub Push: SUCCESS'
+            echo '=========================================='
         }
 
         failure {
-            echo 'FAILURE: Review Jenkins Console Output.'
+            echo 'FAILURE: CI/CD pipeline failed.'
+            echo 'Check Jenkins Console Output for details.'
         }
 
         always {
-            echo 'Pipeline execution completed.'
+            echo 'Jenkins pipeline execution finished.'
         }
     }
 }
