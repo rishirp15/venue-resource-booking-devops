@@ -15,6 +15,7 @@ pipeline {
     environment {
         IMAGE_NAME = 'venue-booking'
         IMAGE_TAG = '1.0.0-rc.1'
+        DOCKERHUB_USER = 'rishiphadale'
     }
 
     stages {
@@ -28,21 +29,18 @@ pipeline {
 
         stage('Docker Check') {
             steps {
-                echo 'Checking Docker installation and engine...'
-
                 withEnv([
                     'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
                 ]) {
                     bat 'where docker'
                     bat 'docker version'
-                    bat 'docker info'
                 }
             }
         }
 
         stage('Build and Test') {
             steps {
-                echo 'Building and testing Spring Boot application...'
+                echo 'Building and testing application...'
                 bat 'mvn clean verify'
             }
 
@@ -56,8 +54,6 @@ pipeline {
 
         stage('Archive WAR') {
             steps {
-                echo 'Archiving generated WAR file...'
-
                 archiveArtifacts(
                     artifacts: 'target/*.war',
                     fingerprint: true
@@ -67,8 +63,6 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                echo 'Building Docker image...'
-
                 withEnv([
                     'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
                 ]) {
@@ -79,13 +73,42 @@ pipeline {
 
         stage('Verify Docker Image') {
             steps {
-                echo 'Verifying Docker image...'
-
                 withEnv([
                     'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
                 ]) {
                     bat 'docker image inspect %IMAGE_NAME%:%IMAGE_TAG%'
-                    bat 'docker images %IMAGE_NAME%'
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withEnv([
+                    'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
+                ]) {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'dockerhub-credentials',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_TOKEN'
+                        )
+                    ]) {
+                        bat '''
+                            @echo off
+                            docker tag %IMAGE_NAME%:%IMAGE_TAG% %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%
+                            if errorlevel 1 exit /b 1
+
+                            echo Logging into Docker Hub...
+                            echo %DOCKER_TOKEN% | docker login -u %DOCKER_USER% --password-stdin
+                            if errorlevel 1 exit /b 1
+
+                            echo Pushing Docker image...
+                            docker push %DOCKERHUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%
+                            if errorlevel 1 exit /b 1
+
+                            docker logout
+                        '''
+                    }
                 }
             }
         }
@@ -93,15 +116,15 @@ pipeline {
 
     post {
         success {
-            echo 'SUCCESS: Maven build, tests, WAR packaging and Docker image build completed.'
+            echo 'SUCCESS: Application built, tested, packaged and pushed to Docker Hub.'
         }
 
         failure {
-            echo 'FAILURE: Check the Jenkins console output for the failed stage.'
+            echo 'FAILURE: Review Jenkins Console Output.'
         }
 
         always {
-            echo 'Jenkins pipeline execution finished.'
+            echo 'Pipeline execution completed.'
         }
     }
 }
