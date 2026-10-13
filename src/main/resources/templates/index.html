@@ -65,6 +65,10 @@
                     My Bookings
                 </a>
 
+                <a th:if="${session.userRole == 'ADMIN'}" th:href="@{/admin/bookings}" class="btn">
+                    Admin Dashboard
+                </a>
+
                 <a th:href="@{/logout}" class="btn">
                     Logout
                 </a>
