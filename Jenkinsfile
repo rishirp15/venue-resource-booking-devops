@@ -14,6 +14,7 @@ pipeline {
     environment {
         IMAGE_NAME = 'venue-booking'
         IMAGE_TAG = '1.0.0-rc.1'
+        PATH+DOCKER = 'C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
     }
 
     stages {
