@@ -1,3 +1,4 @@
+
 package com.rishi.venue.config;
 
 import org.springframework.context.annotation.Bean;
@@ -14,6 +15,7 @@ public class SecurityConfig {
             throws Exception {
 
         http
+            .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
             )
