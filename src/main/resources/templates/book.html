@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Venue | Venue Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h2>Venue Booking</h2>
+
+        <div>
+            <a th:href="@{/}">Home</a>
+            <a th:href="@{/venues}">Venues</a>
+            <a th:href="@{/my-bookings}">My Bookings</a>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="nav-logout">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <main class="container form-container">
+
+        <h1>Book a Venue</h1>
+
+        <p>
+            Check slot availability and submit your booking request.
+        </p>
+
+        <section class="venue-details">
+
+            <h2 th:text="${venue.name}">Venue Name</h2>
+
+            <p>
+                <strong>Location:</strong>
+                <span th:text="${venue.location}"></span>
+            </p>
+
+            <p>
+                <strong>Capacity:</strong>
+                <span th:text="${venue.capacity}"></span>
+                people
+            </p>
+
+            <p>
+                <strong>Time Slots:</strong>
+                Morning | Afternoon | Evening
+            </p>
+
+        </section>
+
+        <div class="alert error" th:if="${error}" th:text="${error}">
+        </div>
+
+        <!-- Check availability -->
+
+        <section class="availability-section">
+
+            <h2>Step 1: Check Slot Availability</h2>
+
+            <form th:action="@{/venues/{id}/availability(id=${venue.id})}" method="get">
+
+                <div class="form-group">
+                    <label for="availabilityDate">
+                        Select Date
+                    </label>
+
+                    <input type="date" id="availabilityDate" name="date" th:attr="min=${minDate}"
+                        th:value="${selectedDate}" required>
+                </div>
+
+                <button type="submit" class="btn">
+                    Check Availability
+                </button>
+
+            </form>
+
+        </section>
+
+        <!-- Availability results -->
+
+        <section class="availability-results" th:if="${availability != null}">
+
+            <h2>Availability Results</h2>
+
+            <p>
+                <strong>Selected Date:</strong>
+                <span th:text="${selectedDate}"></span>
+            </p>
+
+            <table class="booking-table">
+                <thead>
+                    <tr>
+                        <th>Time Slot</th>
+                        <th>Availability</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr th:each="entry : ${availability}">
+                        <td th:text="${entry.key}"></td>
+
+                        <td>
+                            <span th:if="${entry.value}" class="status-badge CONFIRMED">
+                                Available
+                            </span>
+
+                            <span th:unless="${entry.value}" class="status-badge CANCELLED">
+                                Booked
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </section>
+
+        <!-- Booking form -->
+
+        <section class="booking-section">
+
+            <h2>Step 2: Submit Booking Request</h2>
+
+            <form th:action="@{/book}" method="post">
+
+                <input type="hidden" name="venueId" th:value="${venue.id}">
+
+                <div class="form-group">
+                    <label for="bookingDate">
+                        Booking Date
+                    </label>
+
+                    <input type="date" id="bookingDate" name="bookingDate" th:attr="min=${minDate}"
+                        th:value="${selectedDate}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="slot">
+                        Select Time Slot
+                    </label>
+
+                    <select id="slot" name="slot" required>
+
+                        <option value="">
+                            -- Select a Slot --
+                        </option>
+
+                        <option th:each="slot : ${slots}" th:value="${slot}" th:text="${slot}"
+                            th:selected="${slot == selectedSlot}" th:disabled="${availability != null
+                                and availability[slot] == false}">
+                        </option>
+
+                    </select>
+                </div>
+
+                <button type="submit" class="btn">
+                    Submit Booking Request
+                </button>
+
+            </form>
+
+        </section>
+
+        <section class="booking-info">
+
+            <h3>Important Information</h3>
+
+            <ul>
+                <li>
+                    New bookings are initially marked
+                    <strong>PENDING</strong>.
+                </li>
+
+                <li>
+                    Administrators can confirm pending bookings.
+                </li>
+
+                <li>
+                    Duplicate active bookings for the same venue,
+                    date and slot are not allowed.
+                </li>
+
+                <li>
+                    Cancelled slots become available again.
+                </li>
+            </ul>
+
+        </section>
+
+        <div class="actions">
+
+            <a class="btn" th:href="@{/venues}">
+                Back to Venues
+            </a>
+
+            <a class="btn" th:href="@{/my-bookings}">
+                My Bookings
+            </a>
+
+        </div>
+
+    </main>
+
+</body>
+
+</html>

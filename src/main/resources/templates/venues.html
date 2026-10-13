@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Venues | Venue Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h2>Venue Booking</h2>
+
+        <div>
+            <a th:href="@{/}">Home</a>
+            <a th:href="@{/my-bookings}">My Bookings</a>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="nav-logout">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <h1>Explore Available Venues</h1>
+
+        <p>
+            Choose a venue that suits your event or activity.
+        </p>
+
+        <div class="venue-grid">
+
+            <div class="venue-card" th:each="venue : ${venues}">
+
+                <h2 th:text="${venue.name}">Venue Name</h2>
+
+                <p>
+                    <strong>Location:</strong>
+                    <span th:text="${venue.location}">
+                        Location
+                    </span>
+                </p>
+
+                <p>
+                    <strong>Capacity:</strong>
+                    <span th:text="${venue.capacity}">0</span>
+                    people
+                </p>
+
+                <p>
+                    <strong>Slots:</strong>
+                    Morning | Afternoon | Evening
+                </p>
+
+                <a class="btn" th:href="@{/book/{id}(id=${venue.id})}">
+                    Book Venue
+                </a>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+
+</html>

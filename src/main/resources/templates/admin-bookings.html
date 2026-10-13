@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Venue Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h2>Venue Booking — Admin</h2>
+
+        <div>
+            <a th:href="@{/}">Home</a>
+            <a th:href="@{/venues}">Venues</a>
+            <a th:href="@{/my-bookings}">My Bookings</a>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="nav-logout">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <h1>Booking Administration</h1>
+
+        <p>
+            Review booking requests and confirm pending reservations.
+        </p>
+
+        <div class="alert success" th:if="${successMessage}" th:text="${successMessage}">
+        </div>
+
+        <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}">
+        </div>
+
+        <p th:if="${#lists.isEmpty(bookings)}">
+            No booking requests found.
+        </p>
+
+        <div class="table-responsive" th:unless="${#lists.isEmpty(bookings)}">
+
+            <table class="booking-table">
+
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Requested By</th>
+                        <th>Venue</th>
+                        <th>Date</th>
+                        <th>Slot</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr th:each="booking : ${bookings}">
+
+                        <td th:text="${booking.id}"></td>
+                        <td th:text="${booking.user.name}"></td>
+                        <td th:text="${booking.venue.name}"></td>
+                        <td th:text="${booking.bookingDate}"></td>
+                        <td th:text="${booking.slot}"></td>
+
+                        <td>
+                            <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">
+                            </span>
+                        </td>
+
+                        <td>
+
+                            <form th:if="${booking.status == 'PENDING'}"
+                                th:action="@{/admin/bookings/{id}/confirm(id=${booking.id})}" method="post">
+
+                                <button type="submit" class="btn btn-success">
+                                    Confirm
+                                </button>
+
+                            </form>
+
+                            <span th:unless="${booking.status == 'PENDING'}">
+                                No action
+                            </span>
+
+                        </td>
+
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </main>
+
+</body>
+
+</html>
