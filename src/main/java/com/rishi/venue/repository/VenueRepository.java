@@ -2,7 +2,9 @@
 package com.rishi.venue.repository;
 
 import com.rishi.venue.model.Venue;
+
 import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
