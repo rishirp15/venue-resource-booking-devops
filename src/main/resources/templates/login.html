@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Login | Venue Booking</title>
+
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 
@@ -17,40 +20,38 @@
             Login to manage your venue bookings.
         </p>
 
+        <!-- Successful registration message -->
         <div class="alert success" th:if="${param.registered}">
             Registration successful. You can now login.
         </div>
 
+        <!-- Successful logout message -->
         <div class="alert success" th:if="${param.logout}">
             You have been logged out successfully.
         </div>
 
+        <!-- Login error message -->
         <div class="alert error" th:if="${error}" th:text="${error}">
         </div>
 
+        <!-- Login form -->
         <form th:action="@{/login}" method="post">
-            <input type="hidden"
-       th:name="${_csrf.parameterName}"
-       th:value="${_csrf.token}" />
+
+            <!-- CSRF protection -->
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
             <div class="form-group">
+                <label for="email">Email</label>
 
-                <label for="email">
-                    Email
-                </label>
-
-                <input type="email" id="email" name="email" placeholder="Enter your email" required>
-
+                <input type="email" id="email" name="email" placeholder="Enter your email" autocomplete="email"
+                    required>
             </div>
 
             <div class="form-group">
+                <label for="password">Password</label>
 
-                <label for="password">
-                    Password
-                </label>
-
-                <input type="password" id="password" name="password" placeholder="Enter password" required>
-
+                <input type="password" id="password" name="password" placeholder="Enter password"
+                    autocomplete="current-password" required>
             </div>
 
             <button type="submit" class="btn">
@@ -61,15 +62,11 @@
 
         <p class="form-footer">
             Don't have an account?
-            <a th:href="@{/register}">
-                Register here
-            </a>
+            <a th:href="@{/register}">Register here</a>
         </p>
 
         <p>
-            <a th:href="@{/}">
-                Back to Home
-            </a>
+            <a th:href="@{/}">Back to Home</a>
         </p>
 
     </div>

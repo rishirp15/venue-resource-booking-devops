@@ -4,31 +4,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Admin Dashboard | Venue Booking</title>
+
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 
 <body>
 
+    <!-- Navigation Bar -->
     <nav class="navbar">
-        <h2>Venue Booking â€” Admin</h2>
+
+        <h2>Venue Booking - Admin</h2>
 
         <div>
             <a th:href="@{/}">Home</a>
             <a th:href="@{/venues}">Venues</a>
             <a th:href="@{/my-bookings}">My Bookings</a>
 
+            <!-- Logout Form -->
             <form th:action="@{/logout}" method="post" class="logout-form">
-            <input type="hidden"
-       th:name="${_csrf.parameterName}"
-       th:value="${_csrf.token}" />
+
+                <!-- CSRF Protection -->
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
                 <button type="submit" class="nav-logout">
                     Logout
                 </button>
+
             </form>
         </div>
+
     </nav>
 
+    <!-- Main Content -->
     <main class="container">
 
         <h1>Booking Administration</h1>
@@ -37,16 +46,20 @@
             Review booking requests and confirm pending reservations.
         </p>
 
+        <!-- Success Message -->
         <div class="alert success" th:if="${successMessage}" th:text="${successMessage}">
         </div>
 
+        <!-- Error Message -->
         <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}">
         </div>
 
+        <!-- Empty Booking List -->
         <p th:if="${#lists.isEmpty(bookings)}">
             No booking requests found.
         </p>
 
+        <!-- Booking Administration Table -->
         <div class="table-responsive" th:unless="${#lists.isEmpty(bookings)}">
 
             <table class="booking-table">
@@ -64,26 +77,52 @@
                 </thead>
 
                 <tbody>
+
                     <tr th:each="booking : ${bookings}">
 
-                        <td th:text="${booking.id}"></td>
-                        <td th:text="${booking.user.name}"></td>
-                        <td th:text="${booking.venue.name}"></td>
-                        <td th:text="${booking.bookingDate}"></td>
-                        <td th:text="${booking.slot}"></td>
-
-                        <td>
-                            <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">
-                            </span>
+                        <!-- Booking ID -->
+                        <td th:text="${booking.id}">
+                            1
                         </td>
 
+                        <!-- User Name -->
+                        <td th:text="${booking.user.name}">
+                            User Name
+                        </td>
+
+                        <!-- Venue Name -->
+                        <td th:text="${booking.venue.name}">
+                            Venue Name
+                        </td>
+
+                        <!-- Booking Date -->
+                        <td th:text="${booking.bookingDate}">
+                            Date
+                        </td>
+
+                        <!-- Time Slot -->
+                        <td th:text="${booking.slot}">
+                            Slot
+                        </td>
+
+                        <!-- Booking Status -->
                         <td>
 
+                            <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">
+                                PENDING
+                            </span>
+
+                        </td>
+
+                        <!-- Admin Actions -->
+                        <td>
+
+                            <!-- Confirm Pending Booking -->
                             <form th:if="${booking.status == 'PENDING'}"
                                 th:action="@{/admin/bookings/{id}/confirm(id=${booking.id})}" method="post">
-            <input type="hidden"
-       th:name="${_csrf.parameterName}"
-       th:value="${_csrf.token}" />
+
+                                <!-- CSRF Protection -->
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
                                 <button type="submit" class="btn btn-success">
                                     Confirm
@@ -91,6 +130,7 @@
 
                             </form>
 
+                            <!-- No Action for Non-Pending Bookings -->
                             <span th:unless="${booking.status == 'PENDING'}">
                                 No action
                             </span>
@@ -98,6 +138,7 @@
                         </td>
 
                     </tr>
+
                 </tbody>
 
             </table>
