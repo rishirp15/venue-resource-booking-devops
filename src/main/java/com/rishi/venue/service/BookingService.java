@@ -78,12 +78,12 @@ public class BookingService {
                         )
                 );
 
-        Venue venue = venueRepository.findById(venueId)
+        Venue venue = venueRepository.findByIdForUpdate(venueId)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
                                 "Venue not found."
                         )
-                );
+        );
 
         if (isSlotBooked(venue, date, slot)) {
             throw new IllegalArgumentException(
