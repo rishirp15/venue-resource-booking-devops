@@ -209,6 +209,32 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy with Ansible') {
+        steps {
+            echo 'Deploying Venue Booking to Ubuntu using Ansible...'
+
+            powershell '''
+            $ErrorActionPreference = "Stop"
+
+            $sshKey = "R:\\JenkinsAgent\\ssh\\venue_deploy"
+            $target = "hduser@192.168.56.101"
+
+            & ssh.exe `
+                -i $sshKey `
+                -o BatchMode=yes `
+                -o StrictHostKeyChecking=yes `
+                $target `
+                "cd ~/venue-booking-ansible && ansible-playbook -i inventory.ini deploy.yml"
+
+            if ($LASTEXITCODE -ne 0) {
+                throw "Ansible deployment failed"
+            }
+
+            Write-Host "Ansible deployment completed successfully!"
+        '''
+        }
+}
     }
 
     post {
