@@ -12,9 +12,16 @@
 
     <nav class="navbar">
         <h2>Venue Booking</h2>
+
         <div>
             <a th:href="@{/}">Home</a>
-            <a th:href="@{/logout}">Logout</a>
+            <a th:href="@{/my-bookings}">My Bookings</a>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="nav-logout">
+                    Logout
+                </button>
+            </form>
         </div>
     </nav>
 
@@ -34,15 +41,21 @@
 
                 <p>
                     <strong>Location:</strong>
-                    <span th:text="${venue.location}">Location</span>
+                    <span th:text="${venue.location}">
+                        Location
+                    </span>
                 </p>
 
                 <p>
                     <strong>Capacity:</strong>
-                    <span th:text="${venue.capacity}">0</span> people
+                    <span th:text="${venue.capacity}">0</span>
+                    people
                 </p>
 
-                <p>Slots: Morning | Afternoon | Evening</p>
+                <p>
+                    <strong>Slots:</strong>
+                    Morning | Afternoon | Evening
+                </p>
 
                 <a class="btn" th:href="@{/book/{id}(id=${venue.id})}">
                     Book Venue

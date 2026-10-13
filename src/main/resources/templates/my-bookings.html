@@ -12,17 +12,26 @@
 
     <nav class="navbar">
         <h2>Venue Booking</h2>
+
         <div>
             <a th:href="@{/}">Home</a>
             <a th:href="@{/venues}">Venues</a>
-            <a th:href="@{/logout}">Logout</a>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="nav-logout">
+                    Logout
+                </button>
+            </form>
         </div>
     </nav>
 
     <main class="container">
 
         <h1>My Bookings</h1>
-        <p>Track your venue reservations and manage active bookings.</p>
+
+        <p>
+            Track your venue reservations and manage active bookings.
+        </p>
 
         <div class="alert success" th:if="${param.success}">
             Booking request submitted successfully!
@@ -41,6 +50,7 @@
         <div class="table-responsive" th:unless="${#lists.isEmpty(bookings)}">
 
             <table class="booking-table">
+
                 <thead>
                     <tr>
                         <th>Booking ID</th>
@@ -54,6 +64,7 @@
 
                 <tbody>
                     <tr th:each="booking : ${bookings}">
+
                         <td th:text="${booking.id}"></td>
                         <td th:text="${booking.venue.name}"></td>
                         <td th:text="${booking.bookingDate}"></td>
@@ -65,6 +76,7 @@
                         </td>
 
                         <td>
+
                             <form th:if="${booking.status == 'PENDING'
                                       or booking.status == 'CONFIRMED'}"
                                 th:action="@{/bookings/{id}/cancel(id=${booking.id})}" method="post"
@@ -73,15 +85,20 @@
                                 <button type="submit" class="btn btn-danger">
                                     Cancel
                                 </button>
+
                             </form>
 
                             <span th:if="${booking.status == 'CANCELLED'}">
                                 Cancelled
                             </span>
+
                         </td>
+
                     </tr>
                 </tbody>
+
             </table>
+
         </div>
 
         <div class="actions">

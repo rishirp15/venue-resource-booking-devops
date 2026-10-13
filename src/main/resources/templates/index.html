@@ -1,83 +1,96 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8">
-
-    <title>
-        Venue Resource Booking System
-    </title>
-
-    <link rel="stylesheet" href="/css/style.css" th:href="@{/css/style.css}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venue Resource Booking System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 
 <body>
 
-    <div class="container">
+    <nav class="navbar">
+        <h2>Venue Booking</h2>
 
-        <h1>
-            Venue Resource Booking System
-        </h1>
+        <div th:if="${session.userId != null}">
+            <a th:href="@{/venues}">Venues</a>
+            <a th:href="@{/my-bookings}">My Bookings</a>
 
-        <p>
-            A centralized platform for viewing venues,
-            checking booking slots and managing venue reservations.
-        </p>
-
-
-        <!-- NOT LOGGED IN -->
-
-        <div class="actions" th:if="${session.userId == null}">
-
-            <a th:href="@{/register}" class="btn">
-                Register
+            <a th:if="${session.userRole == 'ADMIN'}" th:href="@{/admin/bookings}">
+                Admin Dashboard
             </a>
 
-            <a th:href="@{/login}" class="btn">
-                Login
-            </a>
-
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="nav-logout">
+                    Logout
+                </button>
+            </form>
         </div>
 
+        <div th:unless="${session.userId != null}">
+            <a th:href="@{/login}">Login</a>
+            <a th:href="@{/register}">Register</a>
+        </div>
+    </nav>
 
-        <!-- LOGGED IN -->
+    <main class="container">
+
+        <h1>Venue Resource Booking System</h1>
+
+        <p>
+            A centralized platform for managing venue
+            availability and booking requests.
+        </p>
 
         <div th:if="${session.userId != null}">
 
             <h2>
                 Welcome,
-                <span th:text="${session.userName}">
-                    User
-                </span>!
+                <span th:text="${session.userName}">User</span>!
             </h2>
 
             <p>
-                You are successfully logged in.
+                Explore venues, submit booking requests,
+                and track their approval status.
             </p>
 
             <div class="actions">
-
-                <a th:href="@{/venues}" class="btn">
+                <a class="btn" th:href="@{/venues}">
                     View Venues
                 </a>
 
-                <a th:href="@{/my-bookings}" class="btn">
+                <a class="btn" th:href="@{/my-bookings}">
                     My Bookings
                 </a>
 
-                <a th:if="${session.userRole == 'ADMIN'}" th:href="@{/admin/bookings}" class="btn">
+                <a class="btn" th:if="${session.userRole == 'ADMIN'}" th:href="@{/admin/bookings}">
                     Admin Dashboard
                 </a>
-
-                <a th:href="@{/logout}" class="btn">
-                    Logout
-                </a>
-
             </div>
 
         </div>
 
-    </div>
+        <div th:unless="${session.userId != null}">
+
+            <p>
+                Register or log in to explore available venues
+                and manage your bookings.
+            </p>
+
+            <div class="actions">
+                <a class="btn" th:href="@{/register}">
+                    Register
+                </a>
+
+                <a class="btn" th:href="@{/login}">
+                    Login
+                </a>
+            </div>
+
+        </div>
+
+    </main>
 
 </body>
 
