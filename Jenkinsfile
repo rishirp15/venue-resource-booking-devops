@@ -123,8 +123,8 @@ pipeline {
 
                             Write-Host "Logging into Docker Hub..."
 
-                            $env:DOCKER_TOKEN |
-                                docker login --username $env:DOCKER_USER --password-stdin
+                            $token = $env:DOCKER_TOKEN.Trim()
+                            $token | docker login --username $env:DOCKER_USER --password-stdin
 
                             if ($LASTEXITCODE -ne 0) {
                                 throw "Docker Hub authentication failed"
