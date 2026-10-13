@@ -1,6 +1,6 @@
 
 pipeline {
-    agent { label 'built-in' }
+    agent { label 'windows-docker' }
 
     tools {
         jdk 'JDK-21'
@@ -9,34 +9,44 @@ pipeline {
 
     options {
         timestamps()
-        skipDefaultCheckout(true)
+        disableConcurrentBuilds()
     }
 
     environment {
-        IMAGE_NAME = 'venue-booking'
-        IMAGE_TAG = '1.0.0-rc.1'
-        DOCKERHUB_USER = 'rishiphadale'
+        APP_NAME = 'venue-booking'
+        APP_VERSION = '1.0.0-rc.1'
+        DOCKER_IMAGE = 'venue-booking:1.0.0-rc.1'
+        DOCKER_REPOSITORY = 'rishiphadale/venue-booking'
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                echo 'Checking out source code from GitHub...'
+                echo 'Checking out source code...'
                 checkout scm
             }
         }
 
         stage('Docker Check') {
             steps {
-                echo 'Checking Docker installation and engine...'
+                echo 'Verifying Docker installation...'
 
-                withEnv([
-                    'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
-                ]) {
-                    bat 'where docker'
-                    bat 'docker version'
-                }
+                powershell '''
+                    $ErrorActionPreference = "Stop"
+
+                    docker --version
+
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Docker CLI is unavailable"
+                    }
+
+                    docker info --format '{{.ServerVersion}}'
+
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Docker Engine is unavailable"
+                    }
+                '''
             }
         }
 
@@ -44,27 +54,24 @@ pipeline {
             steps {
                 echo 'Building and testing Spring Boot application...'
 
-                bat 'mvn clean verify'
+                bat 'mvn -B clean verify'
             }
 
             post {
                 always {
-                    junit(
-                        allowEmptyResults: true,
-                        testResults: 'target/surefire-reports/*.xml,target/failsafe-reports/*.xml'
-                    )
+                    junit allowEmptyResults: true,
+                          testResults: 'target/surefire-reports/*.xml'
                 }
             }
         }
 
         stage('Archive WAR') {
             steps {
-                echo 'Archiving generated WAR file...'
+                echo 'Archiving application WAR file...'
 
-                archiveArtifacts(
-                    artifacts: 'target/*.war',
-                    fingerprint: true
-                )
+                archiveArtifacts artifacts: 'target/*.war',
+                                 fingerprint: true,
+                                 onlyIfSuccessful: true
             }
         }
 
@@ -72,11 +79,17 @@ pipeline {
             steps {
                 echo 'Building Docker image...'
 
-                withEnv([
-                    'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
-                ]) {
-                    bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
-                }
+                powershell '''
+                    $ErrorActionPreference = "Stop"
+
+                    docker build -t $env:DOCKER_IMAGE .
+
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Docker image build failed"
+                    }
+
+                    Write-Host "Docker image built successfully!"
+                '''
             }
         }
 
@@ -84,12 +97,17 @@ pipeline {
             steps {
                 echo 'Verifying Docker image...'
 
-                withEnv([
-                    'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
-                ]) {
-                    bat 'docker image inspect %IMAGE_NAME%:%IMAGE_TAG%'
-                    bat 'docker images %IMAGE_NAME%'
-                }
+                powershell '''
+                    $ErrorActionPreference = "Stop"
+
+                    docker image inspect $env:DOCKER_IMAGE | Out-Null
+
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Docker image verification failed"
+                    }
+
+                    Write-Host "Docker image verified successfully!"
+                '''
             }
         }
 
@@ -97,55 +115,97 @@ pipeline {
             steps {
                 echo 'Publishing Docker image to Docker Hub...'
 
-                withEnv([
-                    'PATH+DOCKER=C:\\Users\\RISHI\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_TOKEN'
+                    )
                 ]) {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'dockerhub-credentials',
-                            usernameVariable: 'DOCKER_USER',
-                            passwordVariable: 'DOCKER_TOKEN'
+                    powershell '''
+                        $ErrorActionPreference = "Stop"
+
+                        $remoteImage = "$env:DOCKER_REPOSITORY`:$env:APP_VERSION"
+
+                        Write-Host "Tagging Docker image..."
+                        Write-Host "Target: $remoteImage"
+
+                        docker tag $env:DOCKER_IMAGE $remoteImage
+
+                        if ($LASTEXITCODE -ne 0) {
+                            throw "Docker image tagging failed"
+                        }
+
+                        # Create temporary authentication directory
+                        $tempDir = Join-Path $env:TEMP (
+                            "venue-docker-" +
+                            [guid]::NewGuid().ToString("N")
                         )
-                    ]) {
-                        powershell '''
-                            $ErrorActionPreference = "Stop"
 
-                            $image = "$env:DOCKERHUB_USER/$env:IMAGE_NAME`:$env:IMAGE_TAG"
-                            $localImage = "$env:IMAGE_NAME`:$env:IMAGE_TAG"
+                        New-Item -ItemType Directory `
+                            -Path $tempDir -Force | Out-Null
 
-                            Write-Host "Tagging Docker image..."
+                        $tokenFile = Join-Path $tempDir "token.txt"
+                        $dockerConfig = Join-Path $tempDir "config"
 
-                            docker tag $localImage $image
+                        New-Item -ItemType Directory `
+                            -Path $dockerConfig -Force | Out-Null
 
-                            if ($LASTEXITCODE -ne 0) {
-                                throw "Docker image tagging failed"
-                            }
+                        $oldDockerConfig = $env:DOCKER_CONFIG
+
+                        try {
+                            # Write PAT using UTF-8 without BOM
+                            $utf8 = New-Object System.Text.UTF8Encoding($false)
+
+                            [System.IO.File]::WriteAllText(
+                                $tokenFile,
+                                $env:DOCKER_TOKEN + "`n",
+                                $utf8
+                            )
+
+                            # Use isolated Docker credentials
+                            $env:DOCKER_CONFIG = $dockerConfig
 
                             Write-Host "Logging into Docker Hub..."
 
-                            $token = $env:DOCKER_TOKEN.Trim()
-                            $token | docker login --username $env:DOCKER_USER --password-stdin
+                            # CMD redirects raw UTF-8 file bytes to Docker
+                            $command = 'docker login --username ' +
+                                $env:DOCKER_USER +
+                                ' --password-stdin < "' +
+                                $tokenFile + '"'
+
+                            & cmd.exe /d /c $command
 
                             if ($LASTEXITCODE -ne 0) {
                                 throw "Docker Hub authentication failed"
                             }
 
-                            try {
-                                Write-Host "Pushing Docker image..."
+                            Write-Host "Docker Hub login successful!"
 
-                                docker push $image
+                            # Delete plaintext PAT immediately
+                            Remove-Item -Path $tokenFile -Force
 
-                                if ($LASTEXITCODE -ne 0) {
-                                    throw "Docker image push failed"
-                                }
+                            Write-Host "Pushing Docker image..."
 
-                                Write-Host "Docker image successfully published!"
+                            docker push $remoteImage
+
+                            if ($LASTEXITCODE -ne 0) {
+                                throw "Docker image push failed"
                             }
-                            finally {
-                                docker logout
-                            }
-                        '''
-                    }
+
+                            Write-Host "Docker image pushed successfully!"
+                            Write-Host "Image: $remoteImage"
+                        }
+                        finally {
+                            # Restore Docker configuration
+                            $env:DOCKER_CONFIG = $oldDockerConfig
+
+                            # Delete temporary Docker credentials
+                            Remove-Item -Path $tempDir `
+                                -Recurse -Force `
+                                -ErrorAction SilentlyContinue
+                        }
+                    '''
                 }
             }
         }
@@ -153,23 +213,18 @@ pipeline {
 
     post {
         success {
-            echo '=========================================='
-            echo 'SUCCESS: CI/CD PIPELINE COMPLETED'
-            echo 'Maven Build: SUCCESS'
-            echo 'Automated Tests: SUCCESS'
-            echo 'WAR Packaging: SUCCESS'
-            echo 'Docker Build: SUCCESS'
-            echo 'Docker Hub Push: SUCCESS'
-            echo '=========================================='
+            echo '========================================'
+            echo ' CI/CD PIPELINE COMPLETED SUCCESSFULLY'
+            echo '========================================'
+            echo "Docker image: ${env.DOCKER_REPOSITORY}:${env.APP_VERSION}"
         }
 
         failure {
-            echo 'FAILURE: CI/CD pipeline failed.'
-            echo 'Check Jenkins Console Output for details.'
+            echo 'CI/CD pipeline failed. Check the failed stage logs.'
         }
 
         always {
-            echo 'Jenkins pipeline execution finished.'
+            echo "Build completed: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
         }
     }
 }
