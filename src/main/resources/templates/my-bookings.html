@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
@@ -24,7 +24,7 @@
             <!-- Logout Form with CSRF Protection -->
             <form th:action="@{/logout}" method="post" class="logout-form">
 
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
 
                 <button type="submit" class="nav-logout">
                     Logout
@@ -121,7 +121,7 @@
                                 onsubmit="return confirm('Cancel this booking?');">
 
                                 <!-- CSRF Protection -->
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
 
                                 <button type="submit" class="btn btn-danger">
                                     Cancel

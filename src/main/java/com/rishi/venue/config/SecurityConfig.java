@@ -15,7 +15,7 @@ public class SecurityConfig {
             throws Exception {
 
         http
-            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(csrf -> {})
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
             )

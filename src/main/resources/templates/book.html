@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
@@ -25,7 +25,7 @@
             <!-- Logout Form -->
             <form th:action="@{/logout}" method="post" class="logout-form">
 
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
 
                 <button type="submit" class="nav-logout">
                     Logout
@@ -155,7 +155,7 @@
             <form th:action="@{/book}" method="post">
 
                 <!-- CSRF Protection -->
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
 
                 <!-- Selected Venue ID -->
                 <input type="hidden" name="venueId" th:value="${venue.id}">
