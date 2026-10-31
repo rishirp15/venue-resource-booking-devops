@@ -50,18 +50,32 @@ pipeline {
             }
         }
 
-        stage('Build and Test') {
+        stage('Compile') {
             steps {
-                echo 'Building and testing Spring Boot application...'
+                echo 'Compiling Spring Boot application and test classes...'
+                bat 'mvn -B clean compile test-compile'
+            }
+        }
 
-                bat 'mvn -B clean verify'
+        stage('Automated Tests & Quality Gate') {
+            steps {
+                echo 'Executing JUnit and Selenium Automated Test Suites...'
+
+                bat 'mvn -B test'
             }
 
             post {
                 always {
-                    junit allowEmptyResults: true,
+                    junit allowEmptyResults: false,
                           testResults: 'target/surefire-reports/*.xml'
                 }
+            }
+        }
+
+        stage('Package WAR') {
+            steps {
+                echo 'Packaging application WAR file (Quality Gate Passed)...'
+                bat 'mvn -B package -DskipTests'
             }
         }
 
