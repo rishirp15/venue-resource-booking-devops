@@ -20,27 +20,49 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: venue-booking-app
+    image: rishiphadale/venue-booking:1.0.0-rc.1
+    container_name: venue-booking
     restart: unless-stopped
     ports:
       - "${SERVER_PORT:-8081}:8081"
     environment:
-      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8081
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-venuedb}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    volumes:
+      - app_data:/app/data
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
     name: venue_postgres_data
-
+  app_data:
+    name: venue_app_data
