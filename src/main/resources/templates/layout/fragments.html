@@ -34,7 +34,13 @@
                 <a th:href="@{/venues}" class="nav-link" th:classappend="${active == 'venues'} ? 'active'">Venues</a>
             </li>
             <li>
+                <a th:href="@{/recommendations}" class="nav-link" th:classappend="${active == 'recommendations'} ? 'active'">Smart Finder</a>
+            </li>
+            <li>
                 <a th:href="@{/my-bookings}" class="nav-link" th:classappend="${active == 'my-bookings'} ? 'active'">My Bookings</a>
+            </li>
+            <li>
+                <a th:href="@{/my-analytics}" class="nav-link" th:classappend="${active == 'my-analytics'} ? 'active'">Analytics</a>
             </li>
         </th:block>
 
@@ -48,6 +54,12 @@
             </li>
             <li>
                 <a th:href="@{/admin/bookings}" class="nav-link" th:classappend="${active == 'admin-bookings'} ? 'active'">All Bookings</a>
+            </li>
+            <li>
+                <a th:href="@{/admin/analytics}" class="nav-link" th:classappend="${active == 'admin-analytics'} ? 'active'">Analytics</a>
+            </li>
+            <li>
+                <a th:href="@{/recommendations}" class="nav-link" th:classappend="${active == 'recommendations'} ? 'active'">Smart Finder</a>
             </li>
         </th:block>
 

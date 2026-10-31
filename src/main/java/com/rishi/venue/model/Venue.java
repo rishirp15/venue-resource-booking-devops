@@ -22,6 +22,12 @@ public class Venue {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Column(name = "venue_type")
+    private String venueType = "GENERAL";
+
+    @Column(name = "facilities")
+    private String facilities = "Standard Amenities";
+
     public Venue() {
     }
 
@@ -30,6 +36,8 @@ public class Venue {
         this.location = location;
         this.capacity = capacity;
         this.active = true;
+        this.venueType = "GENERAL";
+        this.facilities = "Standard Amenities";
     }
 
     public Venue(String name, String location, Integer capacity, Boolean active) {
@@ -37,6 +45,17 @@ public class Venue {
         this.location = location;
         this.capacity = capacity;
         this.active = active != null ? active : true;
+        this.venueType = "GENERAL";
+        this.facilities = "Standard Amenities";
+    }
+
+    public Venue(String name, String location, Integer capacity, Boolean active, String venueType, String facilities) {
+        this.name = name;
+        this.location = location;
+        this.capacity = capacity;
+        this.active = active != null ? active : true;
+        this.venueType = (venueType != null && !venueType.isBlank()) ? venueType : "GENERAL";
+        this.facilities = (facilities != null && !facilities.isBlank()) ? facilities : "Standard Amenities";
     }
 
     public Long getId() {
@@ -80,6 +99,22 @@ public class Venue {
     }
 
     public boolean isActive() {
-        return Boolean.TRUE.equals(this.active);
+        return getActive();
+    }
+
+    public String getVenueType() {
+        return venueType != null ? venueType : "GENERAL";
+    }
+
+    public void setVenueType(String venueType) {
+        this.venueType = (venueType != null && !venueType.isBlank()) ? venueType : "GENERAL";
+    }
+
+    public String getFacilities() {
+        return facilities != null ? facilities : "Standard Amenities";
+    }
+
+    public void setFacilities(String facilities) {
+        this.facilities = (facilities != null && !facilities.isBlank()) ? facilities : "Standard Amenities";
     }
 }

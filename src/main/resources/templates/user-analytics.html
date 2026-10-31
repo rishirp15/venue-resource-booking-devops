@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout/fragments :: head('My Analytics')}">
+    <meta charset="UTF-8">
+    <title>My Analytics | Venue Resource Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <!-- Reusable Navbar -->
+    <nav th:replace="~{layout/fragments :: navbar('my-analytics')}"></nav>
+
+    <!-- Main Container -->
+    <main class="page-wrapper">
+
+        <!-- Reusable Alerts -->
+        <div th:replace="~{layout/fragments :: alerts}"></div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Personal Booking Analytics</h1>
+                <p class="page-subtitle">
+                    Insights into your reservation activity, venue preferences, and upcoming event schedule.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a th:href="@{/recommendations}" class="btn btn-secondary">
+                    Smart Finder
+                </a>
+                <a th:href="@{/my-bookings}" class="btn btn-primary">
+                    My Bookings
+                </a>
+            </div>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="stats-grid" th:if="${analytics != null}">
+            <!-- Total Reservations -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <line x1="16" x2="16" y1="2" y2="6"/>
+                        <line x1="8" x2="8" y1="2" y2="6"/>
+                        <line x1="3" x2="21" y1="10" y2="10"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" th:text="${analytics.totalBookings}">0</span>
+                    <span class="stat-label">Total Requests</span>
+                </div>
+            </div>
+
+            <!-- Completed Events -->
+            <div class="stat-card">
+                <div class="stat-icon confirmed">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" th:text="${analytics.completedBookings}">0</span>
+                    <span class="stat-label">Completed Events</span>
+                </div>
+            </div>
+
+            <!-- Completion Rate -->
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: var(--primary-light); color: var(--primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" th:text="${analytics.completionRate} + '%'">0.0%</span>
+                    <span class="stat-label">Completion Rate</span>
+                </div>
+            </div>
+
+            <!-- Upcoming Events -->
+            <div class="stat-card">
+                <div class="stat-icon pending">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 14 14"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" th:text="${analytics.upcomingBookingsCount}">0</span>
+                    <span class="stat-label">Upcoming Events</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================================================
+             STATUS DISTRIBUTION & FREQUENTLY USED VENUES
+             ============================================================== -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+
+            <!-- Booking Status Distribution -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Status Distribution</h2>
+                    <span style="font-size: 0.8rem; color: var(--gray-500);">Breakdown of all submissions</span>
+                </div>
+                <div style="position: relative; height: 210px; width: 100%;">
+                    <canvas id="userStatusChart"></canvas>
+                </div>
+                <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem;" th:each="entry : ${analytics.statusDistribution}">
+                        <span class="status-badge" th:classappend="${entry.key}" th:text="${entry.key}">PENDING</span>
+                        <strong th:text="${entry.value}">0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frequently Used Venues -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Frequently Used Venues</h2>
+                    <span style="font-size: 0.8rem; color: var(--gray-500);">Your top preferred locations</span>
+                </div>
+
+                <div th:if="${#lists.isEmpty(analytics.frequentlyUsedVenues)}" style="padding: 2rem; text-align: center; color: var(--gray-500);">
+                    No venue booking history found yet.
+                </div>
+
+                <div class="table-responsive" th:unless="${#lists.isEmpty(analytics.frequentlyUsedVenues)}">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Venue</th>
+                                <th>Capacity</th>
+                                <th>Bookings</th>
+                                <th>Share</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="v : ${analytics.frequentlyUsedVenues}">
+                                <td>
+                                    <strong th:text="${v.venueName}">Seminar Hall</strong>
+                                    <div style="font-size: 0.75rem; color: var(--gray-500);" th:text="${v.location}">Main Building</div>
+                                </td>
+                                <td th:text="${v.capacity} + ' seats'">120 seats</td>
+                                <td><strong th:text="${v.bookingCount}">4</strong></td>
+                                <td>
+                                    <span style="font-weight: 600; color: var(--primary);" th:text="${v.sharePercentage} + '%'">50%</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ==============================================================
+             UPCOMING BOOKING SCHEDULE
+             ============================================================== -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Upcoming Schedule</h2>
+                <a th:href="@{/venues}" class="btn btn-secondary btn-sm">Book Another Venue</a>
+            </div>
+
+            <div th:if="${#lists.isEmpty(analytics.upcomingBookings)}" style="padding: 2rem; text-align: center; color: var(--gray-500);">
+                You have no upcoming reservations scheduled.
+            </div>
+
+            <div class="table-responsive" th:unless="${#lists.isEmpty(analytics.upcomingBookings)}">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Venue</th>
+                            <th>Date</th>
+                            <th>Time Window</th>
+                            <th>Attendees</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="booking : ${analytics.upcomingBookings}">
+                            <td th:text="'#' + ${booking.id}">#1</td>
+                            <td>
+                                <strong th:text="${booking.venue.name}">Conference Room</strong>
+                                <div style="font-size: 0.75rem; color: var(--gray-500);" th:text="${booking.venue.location}">Admin Building</div>
+                            </td>
+                            <td th:text="${#temporals.format(booking.bookingDate, 'MMM dd, yyyy')}">Nov 05, 2026</td>
+                            <td>
+                                <strong th:text="${booking.effectiveStartTime} + ' - ' + ${booking.effectiveEndTime}">13:00 - 16:00</strong>
+                                <div style="font-size: 0.75rem; color: var(--gray-500);" th:text="${booking.slot}">AFTERNOON</div>
+                            </td>
+                            <td th:text="${booking.attendees} + ' ppl'">25 ppl</td>
+                            <td>
+                                <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">APPROVED</span>
+                            </td>
+                            <td>
+                                <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-secondary btn-sm">
+                                    Details
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Reusable Footer -->
+    <footer th:replace="~{layout/fragments :: footer}"></footer>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        var statusData = /*[[${analytics.statusDistribution}]]*/ {};
+        var statusLabels = Object.keys(statusData);
+        var statusCounts = Object.values(statusData);
+
+        if (document.getElementById('userStatusChart')) {
+            new Chart(document.getElementById('userStatusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusCounts,
+                        backgroundColor: ['#b45309', '#15803d', '#b91c1c', '#64748b', '#2563eb'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

@@ -1,10 +1,12 @@
 package com.rishi.venue.controller;
 
+import com.rishi.venue.dto.analytics.AdminAnalyticsData;
 import com.rishi.venue.model.Booking;
 import com.rishi.venue.model.User;
 import com.rishi.venue.model.Venue;
 import com.rishi.venue.repository.UserRepository;
 import com.rishi.venue.repository.VenueRepository;
+import com.rishi.venue.service.AnalyticsService;
 import com.rishi.venue.service.BookingService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,22 +27,32 @@ public class AdminController {
     private final BookingService bookingService;
     private final UserRepository userRepository;
     private final VenueRepository venueRepository;
+    private final AnalyticsService analyticsService;
 
     public AdminController(
             BookingService bookingService,
             UserRepository userRepository) {
-        this(bookingService, userRepository, null);
+        this(bookingService, userRepository, null, null);
+    }
+
+    public AdminController(
+            BookingService bookingService,
+            UserRepository userRepository,
+            VenueRepository venueRepository) {
+        this(bookingService, userRepository, venueRepository, null);
     }
 
     @Autowired
     public AdminController(
             BookingService bookingService,
             UserRepository userRepository,
-            @Autowired(required = false) VenueRepository venueRepository) {
+            @Autowired(required = false) VenueRepository venueRepository,
+            @Autowired(required = false) AnalyticsService analyticsService) {
 
         this.bookingService = bookingService;
         this.userRepository = userRepository;
         this.venueRepository = venueRepository;
+        this.analyticsService = analyticsService;
     }
 
     private User getAdminUser(HttpSession session) {
@@ -98,6 +110,28 @@ public class AdminController {
         model.addAttribute("selectedVenueId", venueId);
 
         return "admin-bookings";
+    }
+
+    @GetMapping("/analytics")
+    public String viewAdminAnalytics(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            HttpSession session,
+            Model model) {
+
+        if (!isAdmin(session)) {
+            return "redirect:/login";
+        }
+
+        if (analyticsService != null) {
+            AdminAnalyticsData analytics = analyticsService.getAdminAnalytics(startDate, endDate);
+            model.addAttribute("analytics", analytics);
+        }
+
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
+        return "admin-analytics";
     }
 
     @PostMapping("/bookings/{bookingId}/approve")

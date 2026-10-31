@@ -23,15 +23,15 @@ public class DataInitializer {
             if (venueRepository.count() == 0) {
 
                 venueRepository.save(
-                    new Venue("Seminar Hall", "Main Building", 120)
+                    new Venue("Seminar Hall", "Main Building", 120, true, "SEMINAR", "Projector, Sound System, AC, Stage, Wi-Fi")
                 );
 
                 venueRepository.save(
-                    new Venue("Conference Room", "Admin Building", 30)
+                    new Venue("Conference Room", "Admin Building", 30, true, "CONFERENCE", "Video Conferencing, Display Screen, Whiteboard, Wi-Fi")
                 );
 
                 venueRepository.save(
-                    new Venue("Computer Laboratory", "Technology Building", 60)
+                    new Venue("Computer Laboratory", "Technology Building", 60, true, "LAB", "Workstations, LAN, Projector, UPS Backup, AC")
                 );
 
                 System.out.println("Sample venues initialized.");

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout/fragments :: head('Smart Venue Recommendations')}">
+    <meta charset="UTF-8">
+    <title>Smart Venue Recommendations | Venue Resource Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <!-- Reusable Navbar -->
+    <nav th:replace="~{layout/fragments :: navbar('recommendations')}"></nav>
+
+    <!-- Main Container -->
+    <main class="page-wrapper">
+
+        <!-- Reusable Alerts -->
+        <div th:replace="~{layout/fragments :: alerts}"></div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Smart Venue Recommendations</h1>
+                <p class="page-subtitle">
+                    Intelligent venue matchmaking based on required capacity, requested schedule, verified availability, and required facilities.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a th:href="@{/venues}" class="btn btn-secondary">
+                    Browse All Venues
+                </a>
+            </div>
+        </div>
+
+        <!-- Recommendation Criteria Form -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <h2>Event Specifications & Preferences</h2>
+                <span style="font-size: 0.85rem; color: var(--gray-500);">Specify your requirements for an algorithmic match</span>
+            </div>
+
+            <form th:action="@{/recommendations}" method="get">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <!-- Required Capacity -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="attendees" class="form-label">
+                            Expected Attendees <span style="color: var(--danger);">*</span>
+                        </label>
+                        <input type="number" id="attendees" name="attendees" class="form-control"
+                               min="1" max="1000" th:value="${attendees}" required>
+                    </div>
+
+                    <!-- Booking Date -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="bookingDate" class="form-label">
+                            Target Date <span style="color: var(--danger);">*</span>
+                        </label>
+                        <input type="date" id="bookingDate" name="bookingDate" class="form-control"
+                               th:min="${minDate}" th:value="${bookingDate}" required>
+                    </div>
+
+                    <!-- Time Slot -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="slot" class="form-label">Time Slot</label>
+                        <select id="slot" name="slot" class="form-control">
+                            <option value="MORNING" th:selected="${slot == 'MORNING'}">Morning (09:00 - 12:00)</option>
+                            <option value="AFTERNOON" th:selected="${slot == 'AFTERNOON'}">Afternoon (13:00 - 16:00)</option>
+                            <option value="EVENING" th:selected="${slot == 'EVENING'}">Evening (17:00 - 20:00)</option>
+                        </select>
+                    </div>
+
+                    <!-- Venue Type -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="venueType" class="form-label">Venue Type</label>
+                        <select id="venueType" name="venueType" class="form-control">
+                            <option th:each="t : ${venueTypes}" th:value="${t}" th:text="${t}"
+                                    th:selected="${venueType != null && venueType == t}">ALL</option>
+                        </select>
+                    </div>
+
+                    <!-- Required Facility / Keyword -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="facility" class="form-label">Required Amenity</label>
+                        <input type="text" id="facility" name="facility" class="form-control"
+                               placeholder="e.g. Projector, Wi-Fi, Video" th:value="${facility}">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem;">
+                    <a th:href="@{/recommendations}" class="btn btn-secondary">Reset</a>
+                    <button type="submit" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Find Best Matches
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ==============================================================
+             RECOMMENDATION RESULTS
+             ============================================================== -->
+        <div class="card">
+            <div class="card-header">
+                <h2>
+                    Recommended Venues
+                    <span style="font-size: 0.85rem; font-weight: normal; color: var(--gray-500);"
+                          th:text="'(' + ${#lists.size(recommendations)} + ' available matches)'">(0 matches)</span>
+                </h2>
+                <span class="badge badge-confirmed">Conflict Checked & Available</span>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${#lists.isEmpty(recommendations)}" style="padding: 2.5rem; text-align: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--gray-400); margin-bottom: 0.75rem;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h3 style="font-size: 1.15rem; color: var(--navy-900); margin-bottom: 0.35rem;">No Matching Venues Available</h3>
+                <p style="color: var(--gray-500); max-width: 460px; margin: 0 auto 1.25rem;">
+                    All venues meeting your capacity of <strong th:text="${attendees}">15</strong> attendees are either already booked on <span th:text="${bookingDate}">date</span> during the selected time, or exceed specifications. Try another time slot or date.
+                </p>
+                <a th:href="@{/venues}" class="btn btn-secondary">Browse All Venues</a>
+            </div>
+
+            <!-- Recommendations List -->
+            <div th:unless="${#lists.isEmpty(recommendations)}" style="display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem 0;">
+
+                <div th:each="rec : ${recommendations}" class="recommendation-card"
+                     style="display: flex; justify-content: space-between; align-items: stretch; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; gap: 1.5rem; flex-wrap: wrap; box-shadow: var(--shadow-sm); transition: border-color 0.15s ease-in-out;">
+
+                    <div style="flex: 1; min-width: 280px;">
+                        <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+                            <span class="match-badge"
+                                  th:style="${rec.matchScore >= 80} ? 'background-color: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border); padding: 0.2rem 0.65rem; border-radius: 999px; font-weight: 700; font-size: 0.8rem;' : 'background-color: var(--primary-light); color: var(--primary); border: 1px solid var(--primary-border); padding: 0.2rem 0.65rem; border-radius: 999px; font-weight: 700; font-size: 0.8rem;'"
+                                  th:text="${rec.matchScore} + '% Match'">95% Match</span>
+                            <span class="status-badge" style="background: var(--gray-100); color: var(--gray-700);"
+                                  th:text="${rec.venue.venueType}">CONFERENCE</span>
+                        </div>
+
+                        <h3 style="font-size: 1.2rem; color: var(--navy-900); margin: 0 0 0.25rem 0;" th:text="${rec.venue.name}">
+                            Conference Room A
+                        </h3>
+
+                        <div style="font-size: 0.85rem; color: var(--gray-500); margin-bottom: 0.75rem;">
+                            <span th:text="${rec.venue.location}">Main Building</span> &bull;
+                            <span th:text="${rec.venue.capacity} + ' total seats'">30 total seats</span>
+                        </div>
+
+                        <!-- Capacity Fit Note -->
+                        <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 0.5rem;"
+                             th:text="${rec.capacityFitDescription}">
+                            Optimal Capacity Match (25 / 30 seats)
+                        </div>
+
+                        <!-- Match Highlights -->
+                        <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.85rem; color: var(--gray-600); line-height: 1.5;">
+                            <li th:each="hl : ${rec.matchHighlights}" th:text="${hl}">Available on selected slot</li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Column -->
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: flex-end; min-width: 170px; border-left: 1px solid var(--gray-100); padding-left: 1.5rem;">
+                        <div style="font-size: 0.8rem; color: var(--gray-500); margin-bottom: 0.5rem; text-align: right;">
+                            Ready for Instant Reservation
+                        </div>
+                        <a th:href="@{/book(venueId=${rec.venue.id}, bookingDate=${bookingDate}, slot=${slot}, attendees=${attendees})}"
+                           class="btn btn-primary" style="white-space: nowrap;">
+                            Book This Venue &rarr;
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Reusable Footer -->
+    <footer th:replace="~{layout/fragments :: footer}"></footer>
+
+</body>
+</html>
+
