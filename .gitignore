@@ -72,5 +72,6 @@ logs/
 # ==============================
 .env
 .env.*
+!.env.example
 secrets/
 credentials/
