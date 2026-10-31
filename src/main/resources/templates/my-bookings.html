@@ -85,6 +85,9 @@
                             </td>
                             <td>
                                 <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">PENDING</span>
+                                <div th:if="${booking.status == 'REJECTED' && booking.rejectionReason != null}"
+                                     style="font-size: 0.75rem; color: var(--danger-text); margin-top: 0.25rem; max-width: 170px;"
+                                     th:text="'Reason: ' + ${booking.rejectionReason}">Reason</div>
                             </td>
                             <td>
                                 <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
@@ -94,14 +97,14 @@
                                     </a>
 
                                     <!-- Reschedule Active Booking -->
-                                    <a th:if="${booking.status == 'PENDING' or booking.status == 'CONFIRMED'}"
+                                    <a th:if="${booking.status == 'PENDING' or booking.status == 'APPROVED' or booking.status == 'CONFIRMED'}"
                                        th:href="@{/bookings/{id}/reschedule(id=${booking.id})}"
                                        class="btn btn-secondary btn-sm" title="Reschedule">
                                         Reschedule
                                     </a>
 
                                     <!-- Cancel Active Booking -->
-                                    <form th:if="${booking.status == 'PENDING' or booking.status == 'CONFIRMED'}"
+                                    <form th:if="${booking.status == 'PENDING' or booking.status == 'APPROVED' or booking.status == 'CONFIRMED'}"
                                           th:action="@{/bookings/{id}/cancel(id=${booking.id})}" method="post"
                                           onsubmit="return confirm('Are you sure you want to cancel this booking reservation?');"
                                           style="margin: 0;">

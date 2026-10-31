@@ -3,6 +3,8 @@ package com.rishi.venue.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "bookings")
@@ -40,6 +42,13 @@ public class Booking {
 
     @Column(nullable = false)
     private String status = "PENDING";
+
+    @Column(name = "rejection_reason", length = 1000)
+    private String rejectionReason;
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("timestamp DESC")
+    private List<BookingApprovalHistory> history = new ArrayList<>();
 
     public Booking() {}
 
@@ -145,6 +154,52 @@ public class Booking {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    public List<BookingApprovalHistory> getHistory() {
+        return history;
+    }
+
+    public void setHistory(List<BookingApprovalHistory> history) {
+        this.history = history;
+    }
+
+    public void addHistory(BookingApprovalHistory entry) {
+        if (entry != null) {
+            if (this.history == null) {
+                this.history = new ArrayList<>();
+            }
+            this.history.add(entry);
+            entry.setBooking(this);
+        }
+    }
+
+    public boolean isPending() {
+        return "PENDING".equalsIgnoreCase(this.status);
+    }
+
+    public boolean isApproved() {
+        return "APPROVED".equalsIgnoreCase(this.status) || "CONFIRMED".equalsIgnoreCase(this.status);
+    }
+
+    public boolean isRejected() {
+        return "REJECTED".equalsIgnoreCase(this.status);
+    }
+
+    public boolean isCancelled() {
+        return "CANCELLED".equalsIgnoreCase(this.status);
+    }
+
+    public boolean isCompleted() {
+        return "COMPLETED".equalsIgnoreCase(this.status);
     }
 
     public LocalTime getEffectiveStartTime() {

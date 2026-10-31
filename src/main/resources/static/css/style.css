@@ -401,11 +401,20 @@ body {
     border-color: var(--warning-border);
 }
 
+.status-badge.APPROVED,
 .status-badge.CONFIRMED,
+.badge-approved,
 .badge-confirmed {
     background-color: var(--success-bg);
     color: var(--success-text);
     border-color: var(--success-border);
+}
+
+.status-badge.REJECTED,
+.badge-rejected {
+    background-color: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
 }
 
 .status-badge.CANCELLED,
@@ -413,6 +422,13 @@ body {
     background-color: var(--gray-100);
     color: var(--gray-600);
     border-color: var(--gray-300);
+}
+
+.status-badge.COMPLETED,
+.badge-completed {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary-border);
 }
 
 /* ==========================================================================
@@ -971,4 +987,262 @@ body {
     .venue-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* ==========================================================================
+   Phase 3: Approval Workflow, Filters, Modals & History Timeline
+   ========================================================================== */
+
+.filter-card {
+    background-color: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.filter-pills-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-full);
+    font-size: 0.825rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--navy-700);
+    background-color: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    transition: all 0.15s ease-in-out;
+}
+
+.filter-pill:hover {
+    background-color: var(--gray-200);
+    color: var(--navy-900);
+}
+
+.filter-pill.active {
+    background-color: var(--primary);
+    color: var(--white);
+    border-color: var(--primary);
+}
+
+.filter-pill .pill-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.725rem;
+    border-radius: var(--radius-full);
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.filter-pill.active .pill-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: var(--white);
+}
+
+.filter-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+}
+
+@media (max-width: 900px) {
+    .filter-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .filter-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* History Timeline */
+.timeline-container {
+    position: relative;
+    padding: 1rem 0 1rem 1.5rem;
+    margin-left: 0.5rem;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    background: var(--gray-200);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.85rem;
+    top: 0.2rem;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: var(--white);
+    border: 3px solid var(--primary);
+}
+
+.timeline-marker.APPROVED {
+    border-color: var(--success);
+}
+
+.timeline-marker.REJECTED {
+    border-color: var(--danger);
+}
+
+.timeline-marker.CANCELLED {
+    border-color: var(--gray-500);
+}
+
+.timeline-marker.COMPLETED {
+    border-color: var(--accent-blue);
+}
+
+.timeline-content {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1.15rem;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.timeline-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--navy-900);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.timeline-time {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+}
+
+.timeline-performer {
+    font-size: 0.825rem;
+    color: var(--gray-600);
+    margin-bottom: 0.35rem;
+}
+
+.timeline-remarks {
+    font-size: 0.85rem;
+    color: var(--navy-800);
+    background: var(--white);
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--primary-border);
+    margin-top: 0.35rem;
+}
+
+/* Modal Dialog for Rejections */
+.rejection-dialog {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.rejection-dialog.active {
+    display: flex;
+}
+
+.dialog-box {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    width: 90%;
+    max-width: 520px;
+    padding: 1.75rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--gray-200);
+}
+
+.dialog-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--danger-text);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dialog-desc {
+    font-size: 0.9rem;
+    color: var(--gray-600);
+    margin-bottom: 1rem;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+/* Rejection Callout in Details */
+.rejection-callout {
+    background-color: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.rejection-callout-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--danger-text);
+    font-size: 1rem;
+    margin-bottom: 0.35rem;
+}
+
+.rejection-callout-reason {
+    font-size: 0.95rem;
+    color: var(--danger-text);
+    line-height: 1.5;
 }

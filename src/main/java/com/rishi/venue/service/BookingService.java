@@ -4,27 +4,34 @@ import com.rishi.venue.dto.AdminDashboardStats;
 import com.rishi.venue.dto.UserDashboardStats;
 import com.rishi.venue.dto.VenueUtilization;
 import com.rishi.venue.model.Booking;
+import com.rishi.venue.model.BookingApprovalHistory;
 import com.rishi.venue.model.User;
 import com.rishi.venue.model.Venue;
-
+import com.rishi.venue.repository.BookingApprovalHistoryRepository;
 import com.rishi.venue.repository.BookingRepository;
 import com.rishi.venue.repository.UserRepository;
 import com.rishi.venue.repository.VenueRepository;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class BookingService {
 
+    public static final String STATUS_PENDING = "PENDING";
+    public static final String STATUS_APPROVED = "APPROVED";
+    public static final String STATUS_CONFIRMED = "CONFIRMED";
+    public static final String STATUS_REJECTED = "REJECTED";
+    public static final String STATUS_CANCELLED = "CANCELLED";
+    public static final String STATUS_COMPLETED = "COMPLETED";
+
     public static final Set<String> ACTIVE_STATUSES =
-            Set.of("PENDING", "CONFIRMED");
+            Set.of(STATUS_PENDING, STATUS_APPROVED, STATUS_CONFIRMED);
 
     public static final List<String> SLOTS =
             List.of("MORNING", "AFTERNOON", "EVENING");
@@ -41,21 +48,34 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final VenueRepository venueRepository;
+    private final BookingApprovalHistoryRepository historyRepository;
 
     public BookingService(
             BookingRepository bookingRepository,
             UserRepository userRepository,
             VenueRepository venueRepository) {
+        this(bookingRepository, userRepository, venueRepository, null);
+    }
+
+    @Autowired
+    public BookingService(
+            BookingRepository bookingRepository,
+            UserRepository userRepository,
+            VenueRepository venueRepository,
+            @Autowired(required = false) BookingApprovalHistoryRepository historyRepository) {
 
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.venueRepository = venueRepository;
+        this.historyRepository = historyRepository;
+    }
+
+    public boolean isApprovedStatus(String status) {
+        return STATUS_APPROVED.equalsIgnoreCase(status) || STATUS_CONFIRMED.equalsIgnoreCase(status);
     }
 
     public static LocalTime getDefaultStartTime(String slot) {
-        if (slot == null) {
-            return MORNING_START;
-        }
+        if (slot == null) return MORNING_START;
         return switch (slot.toUpperCase()) {
             case "AFTERNOON" -> AFTERNOON_START;
             case "EVENING" -> EVENING_START;
@@ -64,9 +84,7 @@ public class BookingService {
     }
 
     public static LocalTime getDefaultEndTime(String slot) {
-        if (slot == null) {
-            return MORNING_END;
-        }
+        if (slot == null) return MORNING_END;
         return switch (slot.toUpperCase()) {
             case "AFTERNOON" -> AFTERNOON_END;
             case "EVENING" -> EVENING_END;
@@ -77,7 +95,24 @@ public class BookingService {
     public static boolean isOverlapping(
             LocalTime start1, LocalTime end1,
             LocalTime start2, LocalTime end2) {
-        return start1.isBefore(end2) && start2.isBefore(end1);
+        if (start1 == null || end1 == null || start2 == null || end2 == null) {
+            return false;
+        }
+        return start1.isBefore(end2) && end1.isAfter(start2);
+    }
+
+    public boolean isSlotBooked(
+            Venue venue,
+            LocalDate bookingDate,
+            String slot) {
+
+        return bookingRepository
+                .existsByVenueAndBookingDateAndSlotAndStatusIn(
+                        venue,
+                        bookingDate,
+                        slot,
+                        ACTIVE_STATUSES
+                );
     }
 
     public boolean hasTimeConflict(
@@ -91,50 +126,26 @@ public class BookingService {
             return false;
         }
 
-        List<Booking> activeBookings = bookingRepository
-                .findByVenueAndBookingDateAndStatusIn(venue, date, ACTIVE_STATUSES);
+        List<Booking> bookingsOnDate = bookingRepository.findByVenueAndBookingDateAndStatusIn(
+                venue,
+                date,
+                ACTIVE_STATUSES
+        );
 
-        if (activeBookings == null || activeBookings.isEmpty()) {
-            return false;
-        }
-
-        for (Booking existing : activeBookings) {
-            if (excludeBookingId != null && existing.getId().equals(excludeBookingId)) {
+        for (Booking existing : bookingsOnDate) {
+            if (excludeBookingId != null && excludeBookingId.equals(existing.getId())) {
                 continue;
             }
 
-            LocalTime existingStart = existing.getEffectiveStartTime();
-            LocalTime existingEnd = existing.getEffectiveEndTime();
+            LocalTime existStart = existing.getEffectiveStartTime();
+            LocalTime existEnd = existing.getEffectiveEndTime();
 
-            if (isOverlapping(startTime, endTime, existingStart, existingEnd)) {
+            if (isOverlapping(startTime, endTime, existStart, existEnd)) {
                 return true;
             }
         }
 
         return false;
-    }
-
-    public boolean isSlotBooked(
-            Venue venue,
-            LocalDate date,
-            String slot) {
-
-        boolean slotExists = bookingRepository
-                .existsByVenueAndBookingDateAndSlotAndStatusIn(
-                        venue,
-                        date,
-                        slot,
-                        ACTIVE_STATUSES
-                );
-
-        if (slotExists) {
-            return true;
-        }
-
-        LocalTime slotStart = getDefaultStartTime(slot);
-        LocalTime slotEnd = getDefaultEndTime(slot);
-
-        return hasTimeConflict(venue, date, slotStart, slotEnd, null);
     }
 
     @Transactional
@@ -147,16 +158,7 @@ public class BookingService {
         LocalTime startTime = getDefaultStartTime(slot);
         LocalTime endTime = getDefaultEndTime(slot);
 
-        return createBooking(
-                userId,
-                venueId,
-                bookingDate,
-                startTime,
-                endTime,
-                1,
-                slot,
-                null
-        );
+        return createBooking(userId, venueId, bookingDate, startTime, endTime, 1, slot, null);
     }
 
     @Transactional
@@ -217,7 +219,6 @@ public class BookingService {
                         )
                 );
 
-        // Lock the venue before checking slot availability to prevent race conditions.
         Venue venue = venueRepository.findByIdForUpdate(venueId)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
@@ -254,9 +255,15 @@ public class BookingService {
                 purpose
         );
 
-        booking.setStatus("PENDING");
+        booking.setStatus(STATUS_PENDING);
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+        recordHistory(saved, null, STATUS_PENDING,
+                user.getEmail() + " (" + user.getRole() + ")",
+                "Initial booking request submitted.");
+
+        return saved;
     }
 
     public List<Venue> findAlternativeVenues(
@@ -299,12 +306,19 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found."));
 
-        boolean isAdmin = "ADMIN".equals(userRole);
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
         if (!isAdmin && (userId == null || !booking.getUser().getId().equals(userId))) {
             throw new SecurityException("You are not authorized to view this booking.");
         }
 
         return booking;
+    }
+
+    public List<BookingApprovalHistory> getBookingHistory(Long bookingId) {
+        if (historyRepository == null || bookingId == null) {
+            return List.of();
+        }
+        return historyRepository.findByBookingIdOrderByTimestampDesc(bookingId);
     }
 
     @Transactional
@@ -324,7 +338,7 @@ public class BookingService {
         }
 
         if (!ACTIVE_STATUSES.contains(booking.getStatus())) {
-            throw new IllegalArgumentException("Only active (pending or confirmed) bookings can be rescheduled.");
+            throw new IllegalArgumentException("Only active (pending or approved) bookings can be rescheduled.");
         }
 
         if (newDate == null || newDate.isBefore(LocalDate.now())) {
@@ -351,7 +365,6 @@ public class BookingService {
                     (newStartTime.getHour() < 17 ? "AFTERNOON" : "EVENING");
         }
 
-        // Lock venue to prevent race conditions during rescheduling
         Venue venue = venueRepository.findByIdForUpdate(booking.getVenue().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Venue not found."));
 
@@ -359,29 +372,215 @@ public class BookingService {
             throw new IllegalArgumentException("This venue is inactive and cannot be rescheduled.");
         }
 
-        // Check conflict excluding this current booking
         if (hasTimeConflict(venue, newDate, newStartTime, newEndTime, booking.getId())) {
             throw new IllegalArgumentException("The requested rescheduled time slot is already booked for this venue.");
         }
 
+        String prevStatus = booking.getStatus();
         booking.setBookingDate(newDate);
         booking.setStartTime(newStartTime);
         booking.setEndTime(newEndTime);
         booking.setSlot(newSlot);
-        // Rescheduled bookings return to PENDING status for administrative review
-        booking.setStatus("PENDING");
+        booking.setStatus(STATUS_PENDING);
+        booking.setRejectionReason(null);
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+        recordHistory(saved, prevStatus, STATUS_PENDING,
+                booking.getUser().getEmail() + " (" + booking.getUser().getRole() + ")",
+                "Rescheduled to " + newDate + " (" + newStartTime + " - " + newEndTime + ", " + newSlot + "). Returned to PENDING for review.");
+
+        return saved;
+    }
+
+    @Transactional
+    public Booking approveBooking(Long bookingId, String adminIdentifier, String remarks) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found."));
+
+        if (!STATUS_PENDING.equalsIgnoreCase(booking.getStatus())) {
+            throw new IllegalArgumentException("Only pending bookings can be approved. Current status: " + booking.getStatus());
+        }
+
+        if (hasTimeConflict(booking.getVenue(), booking.getBookingDate(),
+                booking.getEffectiveStartTime(), booking.getEffectiveEndTime(), booking.getId())) {
+            throw new IllegalArgumentException("Cannot approve booking: time conflict with another active reservation.");
+        }
+
+        String prevStatus = booking.getStatus();
+        booking.setStatus(STATUS_APPROVED);
+        booking.setRejectionReason(null);
+        Booking saved = bookingRepository.save(booking);
+
+        String performer = (adminIdentifier != null && !adminIdentifier.isBlank())
+                ? adminIdentifier : "Administrator";
+        String note = (remarks != null && !remarks.isBlank())
+                ? remarks : "Booking approved by administrator";
+        recordHistory(saved, prevStatus, STATUS_APPROVED, performer, note);
+
+        return saved;
+    }
+
+    @Transactional
+    public Booking rejectBooking(Long bookingId, String adminIdentifier, String rejectionReason) {
+        if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
+            throw new IllegalArgumentException("A rejection reason is required.");
+        }
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found."));
+
+        if (!STATUS_PENDING.equalsIgnoreCase(booking.getStatus())) {
+            throw new IllegalArgumentException("Only pending bookings can be rejected. Current status: " + booking.getStatus());
+        }
+
+        String prevStatus = booking.getStatus();
+        booking.setStatus(STATUS_REJECTED);
+        booking.setRejectionReason(rejectionReason.trim());
+        Booking saved = bookingRepository.save(booking);
+
+        String performer = (adminIdentifier != null && !adminIdentifier.isBlank())
+                ? adminIdentifier : "Administrator";
+        recordHistory(saved, prevStatus, STATUS_REJECTED, performer, rejectionReason.trim());
+
+        return saved;
+    }
+
+    @Transactional
+    public Booking confirmBooking(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found."));
+
+        if (!STATUS_PENDING.equalsIgnoreCase(booking.getStatus())) {
+            throw new IllegalArgumentException("Only pending bookings can be confirmed.");
+        }
+
+        String prevStatus = booking.getStatus();
+        booking.setStatus(STATUS_CONFIRMED);
+        Booking saved = bookingRepository.save(booking);
+
+        recordHistory(saved, prevStatus, STATUS_CONFIRMED, "Administrator", "Booking confirmed");
+
+        return saved;
+    }
+
+    @Transactional
+    public Booking cancelBooking(Long bookingId, Long userId) {
+        return cancelBooking(bookingId, userId, "Booking cancelled by user");
+    }
+
+    @Transactional
+    public Booking cancelBooking(Long bookingId, Long userId, String reason) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found."));
+
+        boolean isOwner = booking.getUser() != null && booking.getUser().getId() != null && booking.getUser().getId().equals(userId);
+        User actor = null;
+        if (userId != null && !isOwner) {
+            actor = userRepository.findById(userId).orElse(null);
+        }
+
+        boolean isAdmin = actor != null && "ADMIN".equalsIgnoreCase(actor.getRole());
+
+        if (!isAdmin && !isOwner) {
+            throw new SecurityException("You cannot cancel another user's booking.");
+        }
+
+        if (!ACTIVE_STATUSES.contains(booking.getStatus())) {
+            throw new IllegalArgumentException("This booking cannot be cancelled. Current status: " + booking.getStatus());
+        }
+
+        String prevStatus = booking.getStatus();
+        booking.setStatus(STATUS_CANCELLED);
+        Booking saved = bookingRepository.save(booking);
+
+        String actorLabel;
+        if (isOwner) {
+            actorLabel = (booking.getUser().getEmail() != null)
+                    ? (booking.getUser().getEmail() + " (" + booking.getUser().getRole() + ")") : "Owner";
+        } else if (actor != null) {
+            actorLabel = actor.getEmail() + " (" + actor.getRole() + ")";
+        } else {
+            actorLabel = "User";
+        }
+        String remarks = (reason != null && !reason.isBlank()) ? reason : "Booking cancelled";
+        recordHistory(saved, prevStatus, STATUS_CANCELLED, actorLabel, remarks);
+
+        return saved;
+    }
+
+    @Transactional
+    public Booking completeBooking(Long bookingId, String actorIdentifier) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found."));
+
+        if (!isApprovedStatus(booking.getStatus())) {
+            throw new IllegalArgumentException("Only approved bookings can be completed. Current status: " + booking.getStatus());
+        }
+
+        String prevStatus = booking.getStatus();
+        booking.setStatus(STATUS_COMPLETED);
+        Booking saved = bookingRepository.save(booking);
+
+        String performer = (actorIdentifier != null && !actorIdentifier.isBlank())
+                ? actorIdentifier : "Administrator";
+        recordHistory(saved, prevStatus, STATUS_COMPLETED, performer, "Booking marked as completed.");
+
+        return saved;
+    }
+
+    @Transactional
+    public int autoMarkCompletedBookings() {
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+
+        List<Booking> allBookings = bookingRepository.findAll();
+        int count = 0;
+        for (Booking b : allBookings) {
+            if (isApprovedStatus(b.getStatus())) {
+                boolean isPast = b.getBookingDate().isBefore(today)
+                        || (b.getBookingDate().equals(today) && b.getEffectiveEndTime().isBefore(now));
+                if (isPast) {
+                    String prevStatus = b.getStatus();
+                    b.setStatus(STATUS_COMPLETED);
+                    bookingRepository.save(b);
+                    recordHistory(b, prevStatus, STATUS_COMPLETED, "System Scheduler",
+                            "Automatically completed after scheduled time");
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     public List<Booking> getUserBookings(Long userId) {
-        return bookingRepository
-                .findByUserIdOrderByBookingDateDesc(userId);
+        autoMarkCompletedBookings();
+        return bookingRepository.findByUserIdOrderByBookingDateDesc(userId);
     }
 
     public List<Booking> getAllBookings() {
-        return bookingRepository
-                .findAllByOrderByBookingDateDesc();
+        autoMarkCompletedBookings();
+        return bookingRepository.findAllByOrderByBookingDateDesc();
+    }
+
+    public List<Booking> getBookingsWithFilters(String status, LocalDate date, Long venueId) {
+        autoMarkCompletedBookings();
+        String normalizedStatus = (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status))
+                ? null : status.trim().toUpperCase();
+
+        return bookingRepository.findWithFilters(normalizedStatus, date, venueId);
+    }
+
+    public Map<String, Long> getBookingStatusCounts() {
+        List<Booking> all = bookingRepository.findAll();
+        Map<String, Long> counts = new HashMap<>();
+        counts.put("ALL", (long) all.size());
+        counts.put("PENDING", all.stream().filter(b -> STATUS_PENDING.equalsIgnoreCase(b.getStatus())).count());
+        counts.put("APPROVED", all.stream().filter(b -> isApprovedStatus(b.getStatus())).count());
+        counts.put("REJECTED", all.stream().filter(b -> STATUS_REJECTED.equalsIgnoreCase(b.getStatus())).count());
+        counts.put("CANCELLED", all.stream().filter(b -> STATUS_CANCELLED.equalsIgnoreCase(b.getStatus())).count());
+        counts.put("COMPLETED", all.stream().filter(b -> STATUS_COMPLETED.equalsIgnoreCase(b.getStatus())).count());
+        return counts;
     }
 
     public UserDashboardStats getUserDashboardStats(Long userId) {
@@ -390,13 +589,13 @@ public class BookingService {
 
         long totalBookings = userBookings.size();
         long pendingBookings = userBookings.stream()
-                .filter(b -> "PENDING".equals(b.getStatus()))
+                .filter(b -> STATUS_PENDING.equalsIgnoreCase(b.getStatus()))
                 .count();
         long confirmedBookings = userBookings.stream()
-                .filter(b -> "CONFIRMED".equals(b.getStatus()))
+                .filter(b -> isApprovedStatus(b.getStatus()))
                 .count();
         long cancelledBookings = userBookings.stream()
-                .filter(b -> "CANCELLED".equals(b.getStatus()))
+                .filter(b -> STATUS_CANCELLED.equalsIgnoreCase(b.getStatus()))
                 .count();
 
         List<Booking> upcomingBookingList = userBookings.stream()
@@ -429,13 +628,13 @@ public class BookingService {
         long totalBookings = allBookings.size();
 
         long pendingApprovals = allBookings.stream()
-                .filter(b -> "PENDING".equals(b.getStatus()))
+                .filter(b -> STATUS_PENDING.equalsIgnoreCase(b.getStatus()))
                 .count();
         long confirmedBookings = allBookings.stream()
-                .filter(b -> "CONFIRMED".equals(b.getStatus()))
+                .filter(b -> isApprovedStatus(b.getStatus()))
                 .count();
         long cancelledBookings = allBookings.stream()
-                .filter(b -> "CANCELLED".equals(b.getStatus()))
+                .filter(b -> STATUS_CANCELLED.equalsIgnoreCase(b.getStatus()))
                 .count();
 
         List<Venue> venues = venueRepository.findAll();
@@ -449,7 +648,7 @@ public class BookingService {
                     .count();
             long venueConfirmed = allBookings.stream()
                     .filter(b -> b.getVenue().getId().equals(venue.getId())
-                            && "CONFIRMED".equals(b.getStatus()))
+                            && isApprovedStatus(b.getStatus()))
                     .count();
             return new VenueUtilization(venue, venueTotal, venueActive, venueConfirmed);
         }).toList();
@@ -470,53 +669,27 @@ public class BookingService {
         );
     }
 
-    @Transactional
-    public Booking confirmBooking(Long bookingId) {
+    private void recordHistory(
+            Booking booking,
+            String previousStatus,
+            String newStatus,
+            String actionPerformedBy,
+            String remarks) {
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Booking not found."
-                        )
+        if (historyRepository != null && booking != null) {
+            try {
+                BookingApprovalHistory entry = new BookingApprovalHistory(
+                        booking,
+                        previousStatus,
+                        newStatus,
+                        actionPerformedBy != null ? actionPerformedBy : "System",
+                        LocalDateTime.now(),
+                        remarks
                 );
-
-        if (!"PENDING".equals(booking.getStatus())) {
-            throw new IllegalArgumentException(
-                    "Only pending bookings can be confirmed."
-            );
+                historyRepository.save(entry);
+            } catch (Exception ignored) {
+                // Ignore any audit log failure to ensure main transaction completes
+            }
         }
-
-        booking.setStatus("CONFIRMED");
-
-        return bookingRepository.save(booking);
-    }
-
-    @Transactional
-    public Booking cancelBooking(
-            Long bookingId,
-            Long userId) {
-
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Booking not found."
-                        )
-                );
-
-        if (!booking.getUser().getId().equals(userId)) {
-            throw new SecurityException(
-                    "You cannot cancel another user's booking."
-            );
-        }
-
-        if (!ACTIVE_STATUSES.contains(booking.getStatus())) {
-            throw new IllegalArgumentException(
-                    "This booking cannot be cancelled."
-            );
-        }
-
-        booking.setStatus("CANCELLED");
-
-        return bookingRepository.save(booking);
     }
 }

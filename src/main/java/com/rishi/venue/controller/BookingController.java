@@ -1,13 +1,13 @@
 package com.rishi.venue.controller;
 
 import com.rishi.venue.model.Booking;
+import com.rishi.venue.model.BookingApprovalHistory;
 import com.rishi.venue.model.Venue;
 import com.rishi.venue.repository.VenueRepository;
 import com.rishi.venue.service.BookingService;
 
 import jakarta.servlet.http.HttpSession;
 
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -31,14 +31,18 @@ public class BookingController {
         this.venueRepository = venueRepository;
     }
 
-    @GetMapping("/book/{venueId}")
+    @GetMapping("/book")
     public String showBookingForm(
-            @PathVariable Long venueId,
+            @RequestParam(required = false) Long venueId,
             HttpSession session,
             Model model) {
 
         if (session.getAttribute("userId") == null) {
             return "redirect:/login";
+        }
+
+        if (venueId == null) {
+            return "redirect:/venues";
         }
 
         Venue venue = venueRepository.findById(venueId).orElse(null);
@@ -50,27 +54,25 @@ public class BookingController {
         model.addAttribute("venue", venue);
         model.addAttribute("slots", BookingService.SLOTS);
         model.addAttribute("minDate", LocalDate.now());
-        model.addAttribute("defaultStartTime", BookingService.MORNING_START);
-        model.addAttribute("defaultEndTime", BookingService.MORNING_END);
 
         return "book";
     }
 
     @PostMapping("/book")
-    public String submitBooking(
+    public String bookVenue(
             @RequestParam Long venueId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate bookingDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime,
-            @RequestParam(required = false, defaultValue = "1") Integer attendees,
+            @RequestParam LocalDate bookingDate,
+            @RequestParam(required = false) LocalTime startTime,
+            @RequestParam(required = false) LocalTime endTime,
+            @RequestParam(required = false) Integer attendees,
             @RequestParam(required = false) String slot,
             @RequestParam(required = false) String purpose,
             HttpSession session,
             Model model) {
 
-        Long userId = (Long) session.getAttribute("userId");
+        Object sessionUserId = session.getAttribute("userId");
 
-        if (userId == null) {
+        if (!(sessionUserId instanceof Long userId)) {
             return "redirect:/login";
         }
 
@@ -91,7 +93,6 @@ public class BookingController {
         } catch (IllegalArgumentException ex) {
 
             Venue venue = venueRepository.findById(venueId).orElse(null);
-
             if (venue == null) {
                 return "redirect:/venues";
             }
@@ -138,7 +139,16 @@ public class BookingController {
 
         try {
             Booking booking = bookingService.getBookingDetails(bookingId, userId, userRole);
+            List<BookingApprovalHistory> history = bookingService.getBookingHistory(bookingId);
+
+            boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
+            boolean isOwner = booking.getUser().getId().equals(userId);
+
             model.addAttribute("booking", booking);
+            model.addAttribute("history", history);
+            model.addAttribute("isAdmin", isAdmin);
+            model.addAttribute("isOwner", isOwner);
+
             return "booking-details";
         } catch (IllegalArgumentException | SecurityException ex) {
             return "redirect:/my-bookings";
@@ -165,7 +175,7 @@ public class BookingController {
             if (!BookingService.ACTIVE_STATUSES.contains(booking.getStatus())) {
                 redirectAttributes.addFlashAttribute(
                         "errorMessage",
-                        "Only pending or confirmed bookings can be rescheduled."
+                        "Only pending or approved bookings can be rescheduled."
                 );
                 return "redirect:/my-bookings";
             }
@@ -184,24 +194,25 @@ public class BookingController {
     }
 
     @PostMapping("/bookings/{bookingId}/reschedule")
-    public String processReschedule(
+    public String rescheduleBooking(
             @PathVariable Long bookingId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate bookingDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime,
+            @RequestParam LocalDate bookingDate,
+            @RequestParam(required = false) LocalTime startTime,
+            @RequestParam(required = false) LocalTime endTime,
             @RequestParam(required = false) String slot,
             HttpSession session,
             Model model,
             RedirectAttributes redirectAttributes) {
 
         Long userId = (Long) session.getAttribute("userId");
+        String userRole = (String) session.getAttribute("userRole");
 
         if (userId == null) {
             return "redirect:/login";
         }
 
         try {
-            bookingService.rescheduleBooking(
+            Booking updatedBooking = bookingService.rescheduleBooking(
                     bookingId,
                     userId,
                     bookingDate,
@@ -212,41 +223,40 @@ public class BookingController {
 
             redirectAttributes.addFlashAttribute(
                     "successMessage",
-                    "Booking rescheduled successfully! Your request has been updated and is pending confirmation."
+                    "Booking rescheduled successfully. Status has been returned to PENDING for administrator review."
             );
-
-            return "redirect:/bookings/" + bookingId;
+            return "redirect:/bookings/" + updatedBooking.getId();
 
         } catch (IllegalArgumentException | SecurityException ex) {
-            Venue venue = venueRepository.findAll().stream().findFirst().orElse(null);
             try {
-                Booking booking = bookingService.getBookingDetails(bookingId, userId, (String) session.getAttribute("userRole"));
-                venue = booking.getVenue();
+                Booking booking = bookingService.getBookingDetails(bookingId, userId, userRole);
+                LocalTime effectiveStart = startTime != null ? startTime : BookingService.getDefaultStartTime(slot);
+                LocalTime effectiveEnd = endTime != null ? endTime : BookingService.getDefaultEndTime(slot);
+
+                List<Venue> alternativeVenues = bookingService.findAlternativeVenues(
+                        booking.getVenue().getId(),
+                        bookingDate,
+                        effectiveStart,
+                        effectiveEnd,
+                        booking.getAttendees()
+                );
+
                 model.addAttribute("booking", booking);
-            } catch (Exception ignored) {}
+                model.addAttribute("venue", booking.getVenue());
+                model.addAttribute("slots", BookingService.SLOTS);
+                model.addAttribute("minDate", LocalDate.now());
+                model.addAttribute("selectedDate", bookingDate);
+                model.addAttribute("selectedSlot", slot);
+                model.addAttribute("selectedStartTime", startTime);
+                model.addAttribute("selectedEndTime", endTime);
+                model.addAttribute("error", ex.getMessage());
+                model.addAttribute("alternativeVenues", alternativeVenues);
 
-            LocalTime effectiveStart = startTime != null ? startTime : BookingService.getDefaultStartTime(slot);
-            LocalTime effectiveEnd = endTime != null ? endTime : BookingService.getDefaultEndTime(slot);
-
-            List<Venue> alternativeVenues = bookingService.findAlternativeVenues(
-                    venue != null ? venue.getId() : null,
-                    bookingDate,
-                    effectiveStart,
-                    effectiveEnd,
-                    1
-            );
-
-            model.addAttribute("venue", venue);
-            model.addAttribute("slots", BookingService.SLOTS);
-            model.addAttribute("minDate", LocalDate.now());
-            model.addAttribute("selectedDate", bookingDate);
-            model.addAttribute("selectedSlot", slot);
-            model.addAttribute("selectedStartTime", startTime);
-            model.addAttribute("selectedEndTime", endTime);
-            model.addAttribute("error", ex.getMessage());
-            model.addAttribute("alternativeVenues", alternativeVenues);
-
-            return "reschedule";
+                return "reschedule";
+            } catch (Exception inner) {
+                redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+                return "redirect:/my-bookings";
+            }
         }
     }
 
@@ -255,15 +265,16 @@ public class BookingController {
             HttpSession session,
             Model model) {
 
-        Long userId = (Long) session.getAttribute("userId");
+        Object sessionUserId = session.getAttribute("userId");
 
-        if (userId == null) {
+        if (!(sessionUserId instanceof Long userId)) {
             return "redirect:/login";
         }
 
         model.addAttribute(
                 "bookings",
-                bookingService.getUserBookings(userId));
+                bookingService.getUserBookings(userId)
+        );
 
         return "my-bookings";
     }
@@ -271,6 +282,7 @@ public class BookingController {
     @PostMapping("/bookings/{bookingId}/cancel")
     public String cancelBooking(
             @PathVariable Long bookingId,
+            @RequestParam(required = false) String cancelReason,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -281,7 +293,7 @@ public class BookingController {
         }
 
         try {
-            bookingService.cancelBooking(bookingId, userId);
+            bookingService.cancelBooking(bookingId, userId, cancelReason);
 
             redirectAttributes.addFlashAttribute(
                     "successMessage",

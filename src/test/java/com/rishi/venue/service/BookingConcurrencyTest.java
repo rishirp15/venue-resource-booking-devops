@@ -1,14 +1,11 @@
-
 package com.rishi.venue.service;
 
 import com.rishi.venue.model.Booking;
 import com.rishi.venue.model.User;
 import com.rishi.venue.model.Venue;
-
 import com.rishi.venue.repository.BookingRepository;
 import com.rishi.venue.repository.UserRepository;
 import com.rishi.venue.repository.VenueRepository;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -136,17 +133,13 @@ class BookingConcurrencyTest {
                                     && b.getBookingDate().equals(date)
                                     && b.getSlot().equals("MORNING")
                                     && ("PENDING".equals(b.getStatus())
+                                        || "APPROVED".equals(b.getStatus())
                                         || "CONFIRMED".equals(b.getStatus())))
                             .toList();
 
-            assertEquals(
-                    1,
-                    activeBookings.size(),
-                    "Only one active booking should exist."
-            );
+            assertEquals(1, activeBookings.size());
 
         } finally {
-            start.countDown();
             executor.shutdownNow();
         }
     }
