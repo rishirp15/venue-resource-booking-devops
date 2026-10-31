@@ -42,15 +42,18 @@
             <li>
                 <a th:href="@{/my-analytics}" class="nav-link" th:classappend="${active == 'my-analytics'} ? 'active'">Analytics</a>
             </li>
+            <li>
+                <a th:href="@{/notifications}" class="nav-link" th:classappend="${active == 'notifications'} ? 'active'">Notifications</a>
+            </li>
         </th:block>
 
         <!-- Logged-in ADMIN Links -->
         <th:block th:if="${session.userId != null and session.userRole == 'ADMIN'}">
             <li>
-                <a th:href="@{/admin/dashboard}" class="nav-link" th:classappend="${active == 'admin-dashboard'} ? 'active'">Admin Dashboard</a>
+                <a th:href="@{/admin/dashboard}" class="nav-link" th:classappend="${active == 'admin-dashboard'} ? 'active'">Dashboard</a>
             </li>
             <li>
-                <a th:href="@{/venues}" class="nav-link" th:classappend="${active == 'venues'} ? 'active'">Venues</a>
+                <a th:href="@{/admin/venues}" class="nav-link" th:classappend="${active == 'admin-venues'} ? 'active'">Venues</a>
             </li>
             <li>
                 <a th:href="@{/admin/bookings}" class="nav-link" th:classappend="${active == 'admin-bookings'} ? 'active'">All Bookings</a>
@@ -59,7 +62,10 @@
                 <a th:href="@{/admin/analytics}" class="nav-link" th:classappend="${active == 'admin-analytics'} ? 'active'">Analytics</a>
             </li>
             <li>
-                <a th:href="@{/recommendations}" class="nav-link" th:classappend="${active == 'recommendations'} ? 'active'">Smart Finder</a>
+                <a th:href="@{/admin/audit}" class="nav-link" th:classappend="${active == 'admin-audit'} ? 'active'">Audit Logs</a>
+            </li>
+            <li>
+                <a th:href="@{/notifications}" class="nav-link" th:classappend="${active == 'notifications'} ? 'active'">Notifications</a>
             </li>
         </th:block>
 

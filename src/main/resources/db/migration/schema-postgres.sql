@@ -1,6 +1,6 @@
 -- ===================================================================
 -- Venue Resource Booking System - PostgreSQL Schema Migration DDL
--- Phase 5: PostgreSQL Database Migration
+-- Phase 5 & 6: PostgreSQL Database Migration, Audit Logs, Notifications
 -- ===================================================================
 
 -- 1. USERS TABLE
@@ -63,3 +63,35 @@ CREATE TABLE IF NOT EXISTS booking_approval_history (
 
 CREATE INDEX IF NOT EXISTS idx_history_booking_id ON booking_approval_history (booking_id);
 CREATE INDEX IF NOT EXISTS idx_history_timestamp ON booking_approval_history (action_timestamp);
+
+-- 5. AUDIT LOGS TABLE (PHASE 6)
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    performed_by VARCHAR(255) NOT NULL,
+    action VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(100) NOT NULL,
+    entity_id BIGINT,
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    details VARCHAR(2000)
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs (timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs (action);
+CREATE INDEX IF NOT EXISTS idx_audit_performed_by ON audit_logs (performed_by);
+CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_logs (entity_type, entity_id);
+
+-- 6. NOTIFICATIONS TABLE (PHASE 6)
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    message VARCHAR(1000) NOT NULL,
+    type VARCHAR(50) NOT NULL DEFAULT 'GENERAL',
+    booking_id BIGINT,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_notif_user_created ON notifications (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_notif_user_read ON notifications (user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notif_booking ON notifications (booking_id);

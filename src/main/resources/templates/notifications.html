@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout/fragments :: head('Notifications')}">
+    <meta charset="UTF-8">
+    <title>Notifications | Venue Resource Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav th:replace="~{layout/fragments :: navbar('notifications')}"></nav>
+
+    <!-- Main Content -->
+    <main class="page-wrapper">
+
+        <!-- Flash Alerts -->
+        <div th:replace="~{layout/fragments :: alerts}"></div>
+
+        <!-- Page Header -->
+        <div class="page-header" style="margin-bottom: 24px;">
+            <div>
+                <h1 class="page-title">Notifications</h1>
+                <p class="page-subtitle">
+                    Stay updated with real-time alerts regarding your venue booking submissions, approvals, rejections, and schedule updates.
+                </p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <form th:if="${unreadCount > 0}" th:action="@{/notifications/read-all}" method="post">
+                    <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                    <button type="submit" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Mark All as Read
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab Filters & Stats -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+            <div style="display: flex; gap: 8px;">
+                <a th:href="@{/notifications(filter='all')}"
+                   class="btn"
+                   th:classappend="${currentFilter == 'all'} ? 'btn-primary' : 'btn-secondary'"
+                   style="padding: 6px 14px; font-size: 0.88rem;">
+                    All Notifications (<span th:text="${totalCount}">0</span>)
+                </a>
+                <a th:href="@{/notifications(filter='unread')}"
+                   class="btn"
+                   th:classappend="${currentFilter == 'unread'} ? 'btn-primary' : 'btn-secondary'"
+                   style="padding: 6px 14px; font-size: 0.88rem;">
+                    Unread Only (<span th:text="${unreadCount}">0</span>)
+                </a>
+            </div>
+
+            <div th:if="${unreadCount > 0}" style="font-size: 0.88rem; color: #0284c7; font-weight: 600;">
+                <span th:text="${unreadCount}">0</span> unread alert(s)
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        <div th:if="${not #lists.isEmpty(notifications)}" style="display: flex; flex-direction: column; gap: 14px;">
+            <div th:each="n : ${notifications}"
+                 class="card"
+                 th:style="${!n.read} ? 'border-left: 4px solid #0284c7; background: #f8fafc;' : 'background: #ffffff;'">
+                
+                <div class="card-body" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 18px 20px;">
+                    
+                    <!-- Left: Notification Content -->
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                            <!-- Type Badge -->
+                            <span class="status-badge"
+                                  th:classappend="${n.type == 'BOOKING_APPROVED'} ? 'approved' :
+                                                  (${n.type == 'BOOKING_REJECTED' or n.type == 'BOOKING_CANCELLED'} ? 'rejected' :
+                                                  (${n.type == 'BOOKING_SUBMITTED'} ? 'pending' : 'completed'))"
+                                  th:text="${n.type}">
+                                TYPE
+                            </span>
+
+                            <!-- Title -->
+                            <h4 style="margin: 0; font-size: 1.02rem; font-weight: 600; color: #1e293b;" th:text="${n.title}">
+                                Notification Title
+                            </h4>
+
+                            <!-- Unread Indicator Tag -->
+                            <span th:if="${!n.read}" style="background: #0284c7; color: #ffffff; font-size: 0.72rem; font-weight: 700; padding: 2px 7px; border-radius: 9999px;">
+                                NEW
+                            </span>
+                        </div>
+
+                        <!-- Message Body -->
+                        <p style="margin: 0 0 10px 0; color: #475569; font-size: 0.92rem; line-height: 1.5;" th:text="${n.message}">
+                            Notification detailed message goes here.
+                        </p>
+
+                        <!-- Meta Info: Timestamp & Booking Reference -->
+                        <div style="display: flex; gap: 16px; align-items: center; font-size: 0.82rem; color: #64748b;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                <span th:text="${#temporals.format(n.createdAt, 'dd MMM yyyy, HH:mm')}">Date & Time</span>
+                            </span>
+
+                            <span th:if="${n.bookingId != null}" style="font-weight: 500; color: #334155;">
+                                Booking Ref: <strong th:text="'#' + ${n.bookingId}">#1</strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Actions -->
+                    <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end; min-width: 140px;">
+                        <!-- View Booking button if referenced -->
+                        <a th:if="${n.bookingId != null}"
+                           th:href="@{/bookings/{id}(id=${n.bookingId})}"
+                           class="btn btn-secondary"
+                           style="padding: 6px 12px; font-size: 0.84rem; white-space: nowrap;">
+                            View Booking
+                        </a>
+
+                        <!-- Mark as Read button -->
+                        <form th:if="${!n.read}" th:action="@{/notifications/{id}/read(id=${n.id})}" method="post">
+                            <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                            <input type="hidden" name="filter" th:value="${currentFilter}">
+                            <button type="submit" class="btn" style="background: transparent; border: 1px solid #cbd5e1; color: #475569; padding: 4px 10px; font-size: 0.8rem; border-radius: 4px;">
+                                Mark as Read
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(notifications)}" class="card" style="text-align: center; padding: 60px 20px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px;">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <h3 style="color: #1e293b; margin-bottom: 6px;">No Notifications</h3>
+            <p style="color: #64748b; font-size: 0.95rem; max-width: 420px; margin: 0 auto 16px auto;">
+                You're completely caught up! Updates regarding your bookings and approvals will appear here.
+            </p>
+            <div>
+                <a th:href="@{/}" class="btn btn-primary" style="font-size: 0.9rem;">Back to Dashboard</a>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+</html>

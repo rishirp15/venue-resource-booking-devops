@@ -282,3 +282,4 @@ public class H2ToPostgresMigrator {
         }
     }
 }
+

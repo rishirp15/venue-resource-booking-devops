@@ -64,3 +64,4 @@ SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE(MAX(id), 1)) FROM 
 SELECT setval(pg_get_serial_sequence('venues', 'id'), COALESCE(MAX(id), 1)) FROM venues;
 SELECT setval(pg_get_serial_sequence('bookings', 'id'), COALESCE(MAX(id), 1)) FROM bookings;
 SELECT setval(pg_get_serial_sequence('booking_approval_history', 'id'), COALESCE(MAX(id), 1)) FROM booking_approval_history;
+

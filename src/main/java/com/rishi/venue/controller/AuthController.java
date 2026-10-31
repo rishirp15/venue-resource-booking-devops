@@ -1,13 +1,14 @@
-
 package com.rishi.venue.controller;
 
 import com.rishi.venue.model.User;
 import com.rishi.venue.repository.UserRepository;
+import com.rishi.venue.service.AuditLogService;
 import com.rishi.venue.service.PasswordService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +21,23 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordService passwordService;
+    private final AuditLogService auditLogService;
 
     public AuthController(
             UserRepository userRepository,
             PasswordService passwordService) {
+        this(userRepository, passwordService, null);
+    }
+
+    @Autowired
+    public AuthController(
+            UserRepository userRepository,
+            PasswordService passwordService,
+            @Autowired(required = false) AuditLogService auditLogService) {
 
         this.userRepository = userRepository;
         this.passwordService = passwordService;
+        this.auditLogService = auditLogService;
     }
 
     // ================= REGISTRATION =================
@@ -73,7 +84,17 @@ public class AuthController {
 
         user.setRole("USER");
 
-        userRepository.save(user);
+        User saved = userRepository.save(user);
+
+        if (auditLogService != null) {
+            auditLogService.log(
+                    email,
+                    "USER_REGISTRATION",
+                    "USER",
+                    saved.getId(),
+                    "New user registered: " + name + " (" + email + ")"
+            );
+        }
 
         return "redirect:/login?registered";
     }
@@ -98,6 +119,15 @@ public class AuthController {
                 userRepository.findByEmail(email);
 
         if (optionalUser.isEmpty()) {
+            if (auditLogService != null) {
+                auditLogService.log(
+                        email,
+                        "LOGIN_FAILED",
+                        "AUTH",
+                        null,
+                        "Failed login attempt: email not found (" + email + ")"
+                );
+            }
             model.addAttribute(
                     "error",
                     "Invalid email or password."
@@ -110,6 +140,16 @@ public class AuthController {
         if (!passwordService.matches(
                 password,
                 user.getPassword())) {
+
+            if (auditLogService != null) {
+                auditLogService.log(
+                        email,
+                        "LOGIN_FAILED",
+                        "AUTH",
+                        user.getId(),
+                        "Failed login attempt: incorrect password for " + email
+                );
+            }
 
             model.addAttribute(
                     "error",
@@ -129,6 +169,16 @@ public class AuthController {
         session.setAttribute("userName", user.getName());
         session.setAttribute("userRole", user.getRole());
 
+        if (auditLogService != null) {
+            auditLogService.log(
+                    user.getEmail(),
+                    "USER_LOGIN",
+                    "AUTH",
+                    user.getId(),
+                    "User logged in successfully (Role: " + user.getRole() + ")"
+            );
+        }
+
         return "redirect:/";
     }
 
@@ -140,6 +190,17 @@ public class AuthController {
         HttpSession session = request.getSession(false);
 
         if (session != null) {
+            String userName = (String) session.getAttribute("userName");
+            Long userId = (Long) session.getAttribute("userId");
+            if (auditLogService != null && userName != null) {
+                auditLogService.log(
+                        userName,
+                        "USER_LOGOUT",
+                        "AUTH",
+                        userId,
+                        "User logged out"
+                );
+            }
             session.invalidate();
         }
 

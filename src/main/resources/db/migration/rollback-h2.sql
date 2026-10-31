@@ -26,3 +26,4 @@ VALUES (3, 'Venue Administrator', 'admin@venue.local', 'admin123', 'ADMIN');
 
 MERGE INTO users (id, name, email, password, role) KEY(id)
 VALUES (4, 'Test2', 'test2@gmail.com', '$2a$10$HWBh1uVGUZWP2SejMmksPuvfqsjXJaT2KpD0ctEuq6fDBkLC7LW62', 'USER');
+

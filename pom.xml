@@ -65,6 +65,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Email Notifications (Optional) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- External Tomcat deployment -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

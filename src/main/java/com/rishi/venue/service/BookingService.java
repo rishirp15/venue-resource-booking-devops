@@ -49,12 +49,22 @@ public class BookingService {
     private final UserRepository userRepository;
     private final VenueRepository venueRepository;
     private final BookingApprovalHistoryRepository historyRepository;
+    private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     public BookingService(
             BookingRepository bookingRepository,
             UserRepository userRepository,
             VenueRepository venueRepository) {
-        this(bookingRepository, userRepository, venueRepository, null);
+        this(bookingRepository, userRepository, venueRepository, null, null, null);
+    }
+
+    public BookingService(
+            BookingRepository bookingRepository,
+            UserRepository userRepository,
+            VenueRepository venueRepository,
+            BookingApprovalHistoryRepository historyRepository) {
+        this(bookingRepository, userRepository, venueRepository, historyRepository, null, null);
     }
 
     @Autowired
@@ -62,12 +72,16 @@ public class BookingService {
             BookingRepository bookingRepository,
             UserRepository userRepository,
             VenueRepository venueRepository,
-            @Autowired(required = false) BookingApprovalHistoryRepository historyRepository) {
+            @Autowired(required = false) BookingApprovalHistoryRepository historyRepository,
+            @Autowired(required = false) AuditLogService auditLogService,
+            @Autowired(required = false) NotificationService notificationService) {
 
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.venueRepository = venueRepository;
         this.historyRepository = historyRepository;
+        this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     public boolean isApprovedStatus(String status) {
@@ -263,6 +277,16 @@ public class BookingService {
                 user.getEmail() + " (" + user.getRole() + ")",
                 "Initial booking request submitted.");
 
+        if (notificationService != null) {
+            notificationService.notify(
+                    user,
+                    "Booking Request Submitted (#" + saved.getId() + ")",
+                    "Your booking request for venue '" + venue.getName() + "' on " + bookingDate + " (" + slot + ") has been submitted and is pending administrator approval.",
+                    "BOOKING_SUBMITTED",
+                    saved.getId()
+            );
+        }
+
         return saved;
     }
 
@@ -390,6 +414,16 @@ public class BookingService {
                 booking.getUser().getEmail() + " (" + booking.getUser().getRole() + ")",
                 "Rescheduled to " + newDate + " (" + newStartTime + " - " + newEndTime + ", " + newSlot + "). Returned to PENDING for review.");
 
+        if (notificationService != null && saved.getUser() != null) {
+            notificationService.notify(
+                    saved.getUser(),
+                    "Booking Rescheduled (#" + saved.getId() + ")",
+                    "Your booking #" + saved.getId() + " for '" + saved.getVenue().getName() + "' was rescheduled to " + newDate + " (" + newSlot + ") and is pending administrator approval.",
+                    "BOOKING_RESCHEDULED",
+                    saved.getId()
+            );
+        }
+
         return saved;
     }
 
@@ -418,6 +452,16 @@ public class BookingService {
                 ? remarks : "Booking approved by administrator";
         recordHistory(saved, prevStatus, STATUS_APPROVED, performer, note);
 
+        if (notificationService != null && saved.getUser() != null) {
+            notificationService.notify(
+                    saved.getUser(),
+                    "Booking Approved (#" + saved.getId() + ")",
+                    "Great news! Your booking request for '" + saved.getVenue().getName() + "' on " + saved.getBookingDate() + " (" + saved.getSlot() + ") has been approved." + ((remarks != null && !remarks.isBlank()) ? " Remarks: " + remarks : ""),
+                    "BOOKING_APPROVED",
+                    saved.getId()
+            );
+        }
+
         return saved;
     }
 
@@ -442,6 +486,16 @@ public class BookingService {
         String performer = (adminIdentifier != null && !adminIdentifier.isBlank())
                 ? adminIdentifier : "Administrator";
         recordHistory(saved, prevStatus, STATUS_REJECTED, performer, rejectionReason.trim());
+
+        if (notificationService != null && saved.getUser() != null) {
+            notificationService.notify(
+                    saved.getUser(),
+                    "Booking Declined (#" + saved.getId() + ")",
+                    "Your booking request for '" + saved.getVenue().getName() + "' on " + saved.getBookingDate() + " was declined. Reason: " + rejectionReason.trim(),
+                    "BOOKING_REJECTED",
+                    saved.getId()
+            );
+        }
 
         return saved;
     }
@@ -505,6 +559,16 @@ public class BookingService {
         }
         String remarks = (reason != null && !reason.isBlank()) ? reason : "Booking cancelled";
         recordHistory(saved, prevStatus, STATUS_CANCELLED, actorLabel, remarks);
+
+        if (notificationService != null && saved.getUser() != null) {
+            notificationService.notify(
+                    saved.getUser(),
+                    "Booking Cancelled (#" + saved.getId() + ")",
+                    "Your booking #" + saved.getId() + " for '" + saved.getVenue().getName() + "' on " + saved.getBookingDate() + " was cancelled." + ((reason != null && !reason.isBlank()) ? " Reason: " + reason : ""),
+                    "BOOKING_CANCELLED",
+                    saved.getId()
+            );
+        }
 
         return saved;
     }
@@ -687,6 +751,34 @@ public class BookingService {
                         remarks
                 );
                 historyRepository.save(entry);
+            } catch (Exception ignored) {
+                // Ignore any approval history failure to ensure main transaction completes
+            }
+        }
+
+        if (auditLogService != null && booking != null) {
+            try {
+                String action = switch (newStatus != null ? newStatus.toUpperCase() : "UNKNOWN") {
+                    case "APPROVED" -> "BOOKING_APPROVED";
+                    case "CONFIRMED" -> "BOOKING_CONFIRMED";
+                    case "REJECTED" -> "BOOKING_REJECTED";
+                    case "CANCELLED" -> "BOOKING_CANCELLED";
+                    case "COMPLETED" -> "BOOKING_COMPLETED";
+                    case "PENDING" -> (previousStatus == null) ? "BOOKING_CREATED" : "BOOKING_RESCHEDULED";
+                    default -> "BOOKING_" + newStatus;
+                };
+
+                String details = (remarks != null && !remarks.isBlank())
+                        ? remarks
+                        : String.format("Booking status transitioned from %s to %s", previousStatus, newStatus);
+
+                auditLogService.log(
+                        actionPerformedBy != null ? actionPerformedBy : "System",
+                        action,
+                        "BOOKING",
+                        booking.getId(),
+                        details
+                );
             } catch (Exception ignored) {
                 // Ignore any audit log failure to ensure main transaction completes
             }

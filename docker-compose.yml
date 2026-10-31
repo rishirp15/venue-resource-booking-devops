@@ -43,3 +43,4 @@ services:
 volumes:
   postgres_data:
     name: venue_postgres_data
+

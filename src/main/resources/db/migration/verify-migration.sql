@@ -37,3 +37,4 @@ SELECT
 UNION ALL
 SELECT
     'booking_approval_history' AS table_name, last_value FROM booking_approval_history_id_seq;
+
