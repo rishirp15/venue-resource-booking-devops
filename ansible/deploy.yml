@@ -2,6 +2,7 @@
 # ==============================================================================
 # Ansible Playbook: Deploy Venue Resource Booking System
 # Automates Docker container lifecycle, health checks, persistence & idempotency
+# Supports release tracking and automated rollback state recording
 # ==============================================================================
 - name: Deploy Venue Resource Booking System
   hosts: deployment
@@ -10,7 +11,7 @@
 
   vars:
     app_name: venue-booking
-    app_version: 1.0.0-rc.1
+    app_version: 1.0.0
     docker_repository: rishiphadale/venue-booking
     image_name: "{{ docker_repository }}:{{ app_version }}"
     host_port: 8081
@@ -18,6 +19,7 @@
     spring_profile: dev
     app_data_dir: /home/hduser/venue-booking-data
     app_env_file: "{{ playbook_dir }}/app.env"
+    release_state_file: "{{ playbook_dir }}/release-state.json"
     java_opts: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
     stop_timeout: 20
     health_check_retries: 30
@@ -28,6 +30,21 @@
       command: docker info
       register: docker_engine_check
       changed_when: false
+
+    - name: Read existing release state
+      command: "cat {{ release_state_file }}"
+      register: existing_release_state_raw
+      failed_when: false
+      changed_when: false
+
+    - name: Parse previous release version
+      set_fact:
+        recorded_previous_version: >-
+          {{
+            (existing_release_state_raw.stdout | from_json).current_version
+            if (existing_release_state_raw.rc == 0 and (existing_release_state_raw.stdout | trim | length > 0) and ((existing_release_state_raw.stdout | from_json).current_version is defined))
+            else '1.0.0-rc.1'
+          }}
 
     - name: Pull application image from Docker Hub
       command: "docker pull {{ image_name }}"
@@ -105,6 +122,17 @@
       register: container_health_status
       changed_when: false
 
+    - name: Record release state upon successful deployment
+      template:
+        src: templates/release-state.json.j2
+        dest: "{{ release_state_file }}"
+        mode: '0640'
+      vars:
+        current_version: "{{ app_version }}"
+        previous_version: "{{ recorded_previous_version }}"
+        release_status: "HEALTHY"
+      when: (needs_redeploy | bool) or (existing_release_state_raw.stdout | trim | length == 0)
+
     - name: Display deployment verification summary
       debug:
         msg:
@@ -118,5 +146,7 @@
           - "Host Port        : {{ host_port }}"
           - "Health URL       : http://127.0.0.1:{{ host_port }}/health"
           - "Health Status    : {{ health_check.status }}"
+          - "Active Version   : {{ app_version }}"
+          - "Previous Version : {{ recorded_previous_version }}"
           - "Redeployed       : {{ needs_redeploy | bool }}"
           - "========================================================"

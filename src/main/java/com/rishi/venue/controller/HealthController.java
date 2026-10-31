@@ -1,6 +1,7 @@
 package com.rishi.venue.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,9 +17,12 @@ import java.util.Map;
 public class HealthController {
 
     private final DataSource dataSource;
+    private final String appVersion;
 
-    public HealthController(@Autowired(required = false) DataSource dataSource) {
+    public HealthController(@Autowired(required = false) DataSource dataSource,
+                            @Value("${app.version:1.0.0-rc.1}") String appVersion) {
         this.dataSource = dataSource;
+        this.appVersion = appVersion;
     }
 
     @GetMapping("/health")
@@ -27,6 +31,7 @@ public class HealthController {
         response.put("status", "UP");
         response.put("timestamp", Instant.now().toString());
         response.put("application", "venue-booking");
+        response.put("version", appVersion);
 
         boolean dbHealthy = true;
         String dbDetails = "connected";

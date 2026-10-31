@@ -1,0 +1,148 @@
+---
+# ==============================================================================
+# Ansible Playbook: Rollback Venue Resource Booking System
+# Restores previous stable Docker release safely with health verification
+# ==============================================================================
+- name: Rollback Venue Resource Booking System
+  hosts: deployment
+  become: false
+  gather_facts: false
+
+  vars:
+    app_name: venue-booking
+    docker_repository: rishiphadale/venue-booking
+    host_port: 8081
+    container_port: 8081
+    spring_profile: dev
+    app_data_dir: /home/hduser/venue-booking-data
+    app_env_file: "{{ playbook_dir }}/app.env"
+    release_state_file: "{{ playbook_dir }}/release-state.json"
+    java_opts: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
+    stop_timeout: 15
+    health_check_retries: 30
+    health_check_delay: 3
+
+  tasks:
+    - name: Verify Docker is installed and running
+      command: docker info
+      register: docker_engine_check
+      changed_when: false
+
+    - name: Read release state file
+      command: "cat {{ release_state_file }}"
+      register: release_state_raw
+      failed_when: false
+      changed_when: false
+
+    - name: Determine rollback target version
+      set_fact:
+        rollback_version: >-
+          {{
+            target_version
+            if (target_version is defined and target_version | length > 0)
+            else (
+              (release_state_raw.stdout | from_json).previous_version
+              if (release_state_raw.rc == 0 and (release_state_raw.stdout | trim | length > 0) and ((release_state_raw.stdout | from_json).previous_version is defined) and (release_state_raw.stdout | from_json).previous_version | length > 0)
+              else '1.0.0'
+            )
+          }}
+
+    - name: Validate rollback target version is available
+      fail:
+        msg: "Cannot perform rollback: No previous stable release version identified. Please specify target_version explicitly (e.g., -e target_version=1.0.0)."
+      when: rollback_version is not defined or (rollback_version | trim | length == 0)
+
+    - name: Display rollback intent
+      debug:
+        msg:
+          - "========================================================"
+          - " INITIATING ROLLBACK PROCEDURE"
+          - "========================================================"
+          - "Target Application : {{ app_name }}"
+          - "Restoring Version  : {{ rollback_version }}"
+          - "Target Image       : {{ docker_repository }}:{{ rollback_version }}"
+          - "Host Port          : {{ host_port }}"
+          - "Data Directory     : {{ app_data_dir }}"
+          - "========================================================"
+
+    - name: Pull previous stable Docker image
+      command: "docker pull {{ docker_repository }}:{{ rollback_version }}"
+      register: rollback_image_pull
+      changed_when: "'Downloaded newer image' in rollback_image_pull.stdout"
+
+    - name: Inspect current running container before stopping
+      command: "docker inspect --format='{{ '{{' }} .State.Status {{ '}}' }}|{{ '{{' }} .Image {{ '}}' }}' {{ app_name }}"
+      register: current_container_status
+      failed_when: false
+      changed_when: false
+
+    - name: Stop currently deployed application container
+      command: "docker stop --time {{ stop_timeout }} {{ app_name }}"
+      when: current_container_status.rc == 0
+
+    - name: Remove currently deployed application container
+      command: "docker rm -f {{ app_name }}"
+      when: current_container_status.rc == 0
+
+    - name: Render environment configuration for restored release
+      template:
+        src: templates/app.env.j2
+        dest: "{{ app_env_file }}"
+        mode: '0640'
+      vars:
+        app_version: "{{ rollback_version }}"
+
+    - name: Start restored Venue Booking application container
+      command: >
+        docker run -d
+        --name {{ app_name }}
+        --restart unless-stopped
+        -p {{ host_port }}:{{ container_port }}
+        --env-file {{ app_env_file }}
+        -v {{ app_data_dir }}:/app/data
+        {{ docker_repository }}:{{ rollback_version }}
+
+    - name: Verify application health endpoint after rollback
+      uri:
+        url: "http://127.0.0.1:{{ host_port }}/health"
+        method: GET
+        return_content: yes
+        status_code: 200
+      register: rollback_health_check
+      until: rollback_health_check.status == 200
+      retries: "{{ health_check_retries }}"
+      delay: "{{ health_check_delay }}"
+      changed_when: false
+
+    - name: Retrieve restored container status and health
+      command: "docker inspect --format='{{ '{{' }} .State.Status {{ '}}' }} (Health: {{ '{{' }} if .State.Health {{ '}}' }}{{ '{{' }} .State.Health.Status {{ '}}' }}{{ '{{' }} else {{ '}}' }}none{{ '{{' }} end {{ '}}' }})' {{ app_name }}"
+      register: restored_container_health
+      changed_when: false
+
+    - name: Update release state with rollback result
+      template:
+        src: templates/release-state.json.j2
+        dest: "{{ release_state_file }}"
+        mode: '0640'
+      vars:
+        current_version: "{{ rollback_version }}"
+        previous_version: >-
+          {{
+            (release_state_raw.stdout | from_json).current_version
+            if (release_state_raw.rc == 0 and (release_state_raw.stdout | from_json).current_version is defined)
+            else ''
+          }}
+        release_status: "ROLLED_BACK"
+
+    - name: Report rollback success
+      debug:
+        msg:
+          - "========================================================"
+          - " ROLLBACK COMPLETED SUCCESSFULLY"
+          - "========================================================"
+          - "Restored Version   : {{ rollback_version }}"
+          - "Container Status   : {{ restored_container_health.stdout }}"
+          - "HTTP Health Status : {{ rollback_health_check.status }} OK"
+          - "Health Response    : {{ rollback_health_check.content }}"
+          - "Data Persistence   : PRESERVED ({{ app_data_dir }})"
+          - "========================================================"

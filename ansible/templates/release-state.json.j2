@@ -1,0 +1,7 @@
+{
+  "current_version": "{{ current_version }}",
+  "previous_version": "{{ previous_version | default('') }}",
+  "image_name": "{{ docker_repository }}:{{ current_version }}",
+  "status": "{{ release_status | default('HEALTHY') }}",
+  "managed_by": "ansible"
+}

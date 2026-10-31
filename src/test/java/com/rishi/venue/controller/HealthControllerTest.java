@@ -30,7 +30,7 @@ class HealthControllerTest {
 
     @BeforeEach
     void setUp() {
-        HealthController controller = new HealthController(dataSource);
+        HealthController controller = new HealthController(dataSource, "1.0.0-rc.1");
         this.mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -45,6 +45,7 @@ class HealthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UP"))
                 .andExpect(jsonPath("$.application").value("venue-booking"))
+                .andExpect(jsonPath("$.version").value("1.0.0-rc.1"))
                 .andExpect(jsonPath("$.components.database.status").value("UP"))
                 .andExpect(jsonPath("$.components.database.details").value("connected"))
                 .andExpect(jsonPath("$.timestamp").exists());
@@ -58,6 +59,7 @@ class HealthControllerTest {
         mockMvc.perform(get("/health").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.status").value("DOWN"))
+                .andExpect(jsonPath("$.version").value("1.0.0-rc.1"))
                 .andExpect(jsonPath("$.components.database.status").value("DOWN"))
                 .andExpect(jsonPath("$.components.database.details").isNotEmpty());
     }
@@ -65,9 +67,10 @@ class HealthControllerTest {
     @Test
     @DisplayName("Health check returns 200 OK when dataSource is null")
     void shouldReturnUpWhenDataSourceIsNull() throws Exception {
-        MockMvc nullDsMockMvc = MockMvcBuilders.standaloneSetup(new HealthController(null)).build();
+        MockMvc nullDsMockMvc = MockMvcBuilders.standaloneSetup(new HealthController(null, "1.0.0-rc.1")).build();
         nullDsMockMvc.perform(get("/health").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("UP"));
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.version").value("1.0.0-rc.1"));
     }
 }
