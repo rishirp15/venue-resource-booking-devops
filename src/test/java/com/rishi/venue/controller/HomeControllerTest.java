@@ -69,3 +69,4 @@ class HomeControllerTest {
                 .andExpect(redirectedUrl("/admin/dashboard"));
     }
 }
+

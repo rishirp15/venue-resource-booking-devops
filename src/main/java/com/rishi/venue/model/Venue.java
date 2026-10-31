@@ -19,6 +19,9 @@ public class Venue {
     @Column(nullable = false)
     private Integer capacity;
 
+    @Column(nullable = false)
+    private Boolean active = true;
+
     public Venue() {
     }
 
@@ -26,6 +29,14 @@ public class Venue {
         this.name = name;
         this.location = location;
         this.capacity = capacity;
+        this.active = true;
+    }
+
+    public Venue(String name, String location, Integer capacity, Boolean active) {
+        this.name = name;
+        this.location = location;
+        this.capacity = capacity;
+        this.active = active != null ? active : true;
     }
 
     public Long getId() {
@@ -58,5 +69,17 @@ public class Venue {
 
     public void setCapacity(Integer capacity) {
         this.capacity = capacity;
+    }
+
+    public Boolean getActive() {
+        return active != null ? active : true;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active != null ? active : true;
+    }
+
+    public boolean isActive() {
+        return Boolean.TRUE.equals(this.active);
     }
 }

@@ -141,13 +141,13 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Booking ID</th>
+                                <th>ID</th>
                                 <th>Venue</th>
                                 <th>Location</th>
                                 <th>Date</th>
-                                <th>Slot</th>
+                                <th>Time Window</th>
                                 <th>Status</th>
-                                <th>Action</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -159,17 +159,22 @@
                                 <td th:text="${booking.venue.location}">Main Building</td>
                                 <td th:text="${#temporals.format(booking.bookingDate, 'MMM dd, yyyy')}">Oct 31, 2026</td>
                                 <td>
-                                    <span style="font-weight: 500;" th:text="${booking.slot}">MORNING</span>
+                                    <span style="font-weight: 500;" th:text="${booking.effectiveStartTime} + ' - ' + ${booking.effectiveEndTime}">09:00 - 12:00</span>
                                 </td>
                                 <td>
                                     <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">PENDING</span>
                                 </td>
                                 <td>
-                                    <form th:action="@{/bookings/{id}/cancel(id=${booking.id})}" method="post"
-                                          onsubmit="return confirm('Are you sure you want to cancel this booking?');">
-                                        <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
-                                    </form>
+                                    <div style="display: flex; gap: 0.4rem; align-items: center;">
+                                        <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-secondary btn-sm">
+                                            Details
+                                        </a>
+                                        <form th:action="@{/bookings/{id}/cancel(id=${booking.id})}" method="post"
+                                              onsubmit="return confirm('Are you sure you want to cancel this booking?');" style="margin: 0;">
+                                            <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -187,11 +192,12 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Booking ID</th>
+                                <th>ID</th>
                                 <th>Venue</th>
                                 <th>Date</th>
-                                <th>Slot</th>
+                                <th>Time Window</th>
                                 <th>Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -199,9 +205,12 @@
                                 <td th:text="'#' + ${booking.id}">#1</td>
                                 <td th:text="${booking.venue.name}">Venue Name</td>
                                 <td th:text="${booking.bookingDate}">2026-10-31</td>
-                                <td th:text="${booking.slot}">Slot</td>
+                                <td th:text="${booking.effectiveStartTime} + ' - ' + ${booking.effectiveEndTime}">09:00 - 12:00</td>
                                 <td>
                                     <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">PENDING</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-secondary btn-sm">Details</a>
                                 </td>
                             </tr>
                         </tbody>

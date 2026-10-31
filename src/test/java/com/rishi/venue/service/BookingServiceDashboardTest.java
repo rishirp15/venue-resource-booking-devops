@@ -137,3 +137,4 @@ class BookingServiceDashboardTest {
         assertEquals(0, util2.activeBookings());
     }
 }
+

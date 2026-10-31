@@ -1,4 +1,3 @@
-
 package com.rishi.venue.controller;
 
 import com.rishi.venue.model.Venue;
@@ -13,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -56,8 +56,7 @@ public class VenueController {
             return "redirect:/login";
         }
 
-        Venue venue = venueRepository.findById(venueId)
-                .orElse(null);
+        Venue venue = venueRepository.findById(venueId).orElse(null);
 
         if (venue == null) {
             return "redirect:/venues";
@@ -78,6 +77,18 @@ public class VenueController {
                     slot,
                     !bookingService.isSlotBooked(venue, date, slot)
             );
+        }
+
+        boolean hasUnavailable = availability.values().stream().anyMatch(available -> !available);
+        if (hasUnavailable) {
+            List<Venue> alternatives = bookingService.findAlternativeVenues(
+                    venueId,
+                    date,
+                    BookingService.MORNING_START,
+                    BookingService.EVENING_END,
+                    1
+            );
+            model.addAttribute("alternativeVenues", alternatives);
         }
 
         model.addAttribute("venue", venue);

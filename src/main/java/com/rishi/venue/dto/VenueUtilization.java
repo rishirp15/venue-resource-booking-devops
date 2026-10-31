@@ -9,3 +9,4 @@ public record VenueUtilization(
         long confirmedBookings
 ) {
 }
+

@@ -59,9 +59,10 @@
                             <th>Requested By</th>
                             <th>Venue</th>
                             <th>Date</th>
-                            <th>Slot</th>
+                            <th>Time Window</th>
+                            <th>Attendees</th>
                             <th>Status</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -77,23 +78,31 @@
                             </td>
                             <td th:text="${#temporals.format(booking.bookingDate, 'MMM dd, yyyy')}">Oct 31, 2026</td>
                             <td>
-                                <span style="font-weight: 500;" th:text="${booking.slot}">MORNING</span>
+                                <span style="font-weight: 500;" th:text="${booking.effectiveStartTime} + ' - ' + ${booking.effectiveEndTime}">09:00 - 12:00</span>
+                                <div style="font-size: 0.75rem; color: var(--gray-500);" th:text="${booking.slot}">MORNING</div>
                             </td>
+                            <td th:text="${booking.attendees} + ' ppl'">1 ppl</td>
                             <td>
                                 <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">PENDING</span>
                             </td>
                             <td>
-                                <!-- Confirm Pending Booking -->
-                                <form th:if="${booking.status == 'PENDING'}"
-                                      th:action="@{/admin/bookings/{id}/confirm(id=${booking.id})}"
-                                      method="post" style="margin: 0;">
-                                    <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
-                                    <button type="submit" class="btn btn-success btn-sm">Confirm</button>
-                                </form>
+                                <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+                                    <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-secondary btn-sm">
+                                        Details
+                                    </a>
 
-                                <span th:unless="${booking.status == 'PENDING'}" style="color: var(--gray-400); font-size: 0.85rem;">
-                                    Completed
-                                </span>
+                                    <!-- Confirm Pending Booking -->
+                                    <form th:if="${booking.status == 'PENDING'}"
+                                          th:action="@{/admin/bookings/{id}/confirm(id=${booking.id})}"
+                                          method="post" style="margin: 0;">
+                                        <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                                        <button type="submit" class="btn btn-success btn-sm">Confirm</button>
+                                    </form>
+
+                                    <span th:unless="${booking.status == 'PENDING'}" style="color: var(--gray-400); font-size: 0.85rem;">
+                                        Completed
+                                    </span>
+                                </div>
                             </td>
                         </tr>
                     </tbody>

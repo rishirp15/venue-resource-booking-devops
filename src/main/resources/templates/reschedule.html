@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout/fragments :: head('Reschedule Booking')}">
+    <meta charset="UTF-8">
+    <title>Reschedule Booking | Venue Resource Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <!-- Reusable Navbar -->
+    <nav th:replace="~{layout/fragments :: navbar('my-bookings')}"></nav>
+
+    <!-- Main Container -->
+    <main class="page-wrapper">
+
+        <!-- Reusable Notification Alerts -->
+        <div th:replace="~{layout/fragments :: alerts}"></div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    Reschedule Booking <span style="color: var(--gray-400); font-weight: normal;" th:text="'#' + ${booking.id}">#1</span>
+                </h1>
+                <p class="page-subtitle">
+                    Select a new date and time window for your reservation.
+                </p>
+            </div>
+
+            <div>
+                <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-secondary">
+                    &larr; Back to Details
+                </a>
+            </div>
+        </div>
+
+        <!-- Current Reservation Summary -->
+        <div class="card" style="max-width: 650px; margin: 0 auto 1.75rem;">
+            <div class="card-header">
+                <h3>Current Booking Summary</h3>
+                <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">PENDING</span>
+            </div>
+            <p><strong>Venue:</strong> <span th:text="${booking.venue.name}">Seminar Hall</span> (<span th:text="${booking.venue.location}">Main Building</span>)</p>
+            <p><strong>Current Date:</strong> <span th:text="${#temporals.format(booking.bookingDate, 'MMM dd, yyyy')}">Oct 31, 2026</span></p>
+            <p><strong>Current Time:</strong> <span th:text="${booking.effectiveStartTime} + ' - ' + ${booking.effectiveEndTime}">09:00 - 12:00</span> (<span th:text="${booking.slot}">MORNING</span>)</p>
+        </div>
+
+        <!-- Smart Alternative Suggestions If Conflict Occurred -->
+        <div class="card" th:if="${alternativeVenues != null and not #lists.isEmpty(alternativeVenues)}"
+             style="border-color: #93c5fd; background-color: #f0f7ff; max-width: 650px; margin: 0 auto 1.75rem;">
+            <div class="card-header" style="border-bottom-color: #bfdbfe;">
+                <h3 style="color: #1e3a8a; font-size: 1.05rem; margin: 0;">Alternative Venues Available</h3>
+            </div>
+            <p style="font-size: 0.9rem; color: var(--gray-700); margin-bottom: 1rem;">
+                The requested date/time on this venue is occupied. These other venues are vacant for your proposed slot:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div th:each="alt : ${alternativeVenues}" style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--gray-200);">
+                    <div>
+                        <strong th:text="${alt.name}">Conference Room</strong>
+                        <span style="font-size: 0.8rem; color: var(--gray-500); margin-left: 0.5rem;" th:text="'(' + ${alt.capacity} + ' seats)'">(30 seats)</span>
+                    </div>
+                    <a th:href="@{/book/{id}(id=${alt.id})}" class="btn btn-secondary btn-sm">Book This Instead</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reschedule Form Card -->
+        <div class="card" style="max-width: 650px; margin: 0 auto;">
+            <div class="card-header">
+                <h2>Choose New Schedule</h2>
+            </div>
+
+            <form th:action="@{/bookings/{id}/reschedule(id=${booking.id})}" method="post">
+                <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+
+                <div class="form-group">
+                    <label class="form-label" for="rescheduleDate">New Booking Date *</label>
+                    <input type="date" id="rescheduleDate" name="bookingDate" class="form-control"
+                           th:attr="min=${minDate}" th:value="${selectedDate != null ? selectedDate : booking.bookingDate}" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="rescheduleSlot">Time Slot Window *</label>
+                    <select id="rescheduleSlot" name="slot" class="form-select" onchange="syncSlotTimes(this.value)">
+                        <option value="MORNING" th:selected="${booking.slot == 'MORNING'}">
+                            Morning (09:00 - 12:00)
+                        </option>
+                        <option value="AFTERNOON" th:selected="${booking.slot == 'AFTERNOON'}">
+                            Afternoon (13:00 - 16:00)
+                        </option>
+                        <option value="EVENING" th:selected="${booking.slot == 'EVENING'}">
+                            Evening (17:00 - 20:00)
+                        </option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="startTime">New Start Time *</label>
+                        <input type="time" id="startTime" name="startTime" class="form-control"
+                               th:value="${selectedStartTime != null ? selectedStartTime : booking.effectiveStartTime}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="endTime">New End Time *</label>
+                        <input type="time" id="endTime" name="endTime" class="form-control"
+                               th:value="${selectedEndTime != null ? selectedEndTime : booking.effectiveEndTime}" required>
+                    </div>
+                </div>
+
+                <p class="form-text" style="margin-bottom: 1.5rem;">
+                    Note: Rescheduled bookings return to <strong>PENDING</strong> status for administrative confirmation.
+                </p>
+
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        Confirm & Reschedule
+                    </button>
+                    <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+    </main>
+
+    <script>
+        function syncSlotTimes(slot) {
+            const startInput = document.getElementById('startTime');
+            const endInput = document.getElementById('endTime');
+            if (slot === 'MORNING') {
+                startInput.value = '09:00';
+                endInput.value = '12:00';
+            } else if (slot === 'AFTERNOON') {
+                startInput.value = '13:00';
+                endInput.value = '16:00';
+            } else if (slot === 'EVENING') {
+                startInput.value = '17:00';
+                endInput.value = '20:00';
+            }
+        }
+    </script>
+
+    <!-- Reusable Footer -->
+    <footer th:replace="~{layout/fragments :: footer}"></footer>
+
+</body>
+</html>
+

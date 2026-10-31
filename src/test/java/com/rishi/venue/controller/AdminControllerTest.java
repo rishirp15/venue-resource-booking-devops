@@ -78,3 +78,4 @@ class AdminControllerTest {
                 .andExpect(model().attributeExists("stats"));
     }
 }
+
