@@ -1,6 +1,8 @@
-
 package com.rishi.venue.service;
 
+import com.rishi.venue.dto.AdminDashboardStats;
+import com.rishi.venue.dto.UserDashboardStats;
+import com.rishi.venue.dto.VenueUtilization;
 import com.rishi.venue.model.Booking;
 import com.rishi.venue.model.User;
 import com.rishi.venue.model.Venue;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -115,6 +118,92 @@ public class BookingService {
     public List<Booking> getAllBookings() {
         return bookingRepository
                 .findAllByOrderByBookingDateDesc();
+    }
+
+    public UserDashboardStats getUserDashboardStats(Long userId) {
+        List<Booking> userBookings = getUserBookings(userId);
+        LocalDate today = LocalDate.now();
+
+        long totalBookings = userBookings.size();
+        long pendingBookings = userBookings.stream()
+                .filter(b -> "PENDING".equals(b.getStatus()))
+                .count();
+        long confirmedBookings = userBookings.stream()
+                .filter(b -> "CONFIRMED".equals(b.getStatus()))
+                .count();
+        long cancelledBookings = userBookings.stream()
+                .filter(b -> "CANCELLED".equals(b.getStatus()))
+                .count();
+
+        List<Booking> upcomingBookingList = userBookings.stream()
+                .filter(b -> !b.getBookingDate().isBefore(today)
+                        && ACTIVE_STATUSES.contains(b.getStatus()))
+                .sorted(Comparator.comparing(Booking::getBookingDate))
+                .toList();
+
+        long upcomingBookings = upcomingBookingList.size();
+
+        List<Booking> recentBookings = userBookings.stream()
+                .limit(5)
+                .toList();
+
+        return new UserDashboardStats(
+                totalBookings,
+                pendingBookings,
+                confirmedBookings,
+                cancelledBookings,
+                upcomingBookings,
+                upcomingBookingList,
+                recentBookings
+        );
+    }
+
+    public AdminDashboardStats getAdminDashboardStats() {
+        long totalUsers = userRepository.count();
+        long totalVenues = venueRepository.count();
+        List<Booking> allBookings = getAllBookings();
+        long totalBookings = allBookings.size();
+
+        long pendingApprovals = allBookings.stream()
+                .filter(b -> "PENDING".equals(b.getStatus()))
+                .count();
+        long confirmedBookings = allBookings.stream()
+                .filter(b -> "CONFIRMED".equals(b.getStatus()))
+                .count();
+        long cancelledBookings = allBookings.stream()
+                .filter(b -> "CANCELLED".equals(b.getStatus()))
+                .count();
+
+        List<Venue> venues = venueRepository.findAll();
+        List<VenueUtilization> venueUtilizations = venues.stream().map(venue -> {
+            long venueTotal = allBookings.stream()
+                    .filter(b -> b.getVenue().getId().equals(venue.getId()))
+                    .count();
+            long venueActive = allBookings.stream()
+                    .filter(b -> b.getVenue().getId().equals(venue.getId())
+                            && ACTIVE_STATUSES.contains(b.getStatus()))
+                    .count();
+            long venueConfirmed = allBookings.stream()
+                    .filter(b -> b.getVenue().getId().equals(venue.getId())
+                            && "CONFIRMED".equals(b.getStatus()))
+                    .count();
+            return new VenueUtilization(venue, venueTotal, venueActive, venueConfirmed);
+        }).toList();
+
+        List<Booking> recentBookings = allBookings.stream()
+                .limit(6)
+                .toList();
+
+        return new AdminDashboardStats(
+                totalUsers,
+                totalVenues,
+                totalBookings,
+                pendingApprovals,
+                confirmedBookings,
+                cancelledBookings,
+                venueUtilizations,
+                recentBookings
+        );
     }
 
     @Transactional

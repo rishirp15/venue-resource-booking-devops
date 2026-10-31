@@ -1,88 +1,72 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
-<head>
+<head th:replace="~{layout/fragments :: head('Available Venues')}">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Available Venues | Venue Booking</title>
-
+    <title>Available Venues | Venue Resource Booking</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 
 <body>
 
-    <!-- Navigation Bar -->
-    <nav class="navbar">
+    <!-- Reusable Navbar -->
+    <nav th:replace="~{layout/fragments :: navbar('venues')}"></nav>
 
-        <h2>Venue Booking</h2>
+    <!-- Main Container -->
+    <main class="page-wrapper">
 
-        <div>
-            <a th:href="@{/}">Home</a>
+        <!-- Reusable Notification Alerts -->
+        <div th:replace="~{layout/fragments :: alerts}"></div>
 
-            <a th:href="@{/my-bookings}">My Bookings</a>
-
-            <!-- Logout with CSRF protection -->
-            <form th:action="@{/logout}" method="post" class="logout-form">
-
-                <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
-
-                <button type="submit" class="nav-logout">
-                    Logout
-                </button>
-
-            </form>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Explore Available Venues</h1>
+                <p class="page-subtitle">
+                    Select a venue that suits your seminar, conference, laboratory or meeting requirements.
+                </p>
+            </div>
         </div>
 
-    </nav>
-
-    <!-- Main Content -->
-    <main class="container">
-
-        <h1>Explore Available Venues</h1>
-
-        <p>
-            Choose a venue that suits your event or activity.
-        </p>
-
-        <!-- Venue Listing -->
+        <!-- Venue Listing Grid -->
         <div class="venue-grid">
 
             <div class="venue-card" th:each="venue : ${venues}">
+                <div>
+                    <div class="venue-card-header">
+                        <h2 class="venue-name" th:text="${venue.name}">Seminar Hall</h2>
+                        <span class="venue-capacity-pill" th:text="${venue.capacity} + ' Seats'">120 Seats</span>
+                    </div>
 
-                <h2 th:text="${venue.name}">
-                    Venue Name
-                </h2>
+                    <ul class="venue-meta">
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span th:text="${venue.location}">Main Building</span>
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>Slots: Morning, Afternoon, Evening</span>
+                        </li>
+                    </ul>
+                </div>
 
-                <p>
-                    <strong>Location:</strong>
-                    <span th:text="${venue.location}">
-                        Location
-                    </span>
-                </p>
-
-                <p>
-                    <strong>Capacity:</strong>
-                    <span th:text="${venue.capacity}">0</span>
-                    people
-                </p>
-
-                <p>
-                    <strong>Slots:</strong>
-                    Morning | Afternoon | Evening
-                </p>
-
-                <!-- Navigate to booking page -->
-                <a class="btn" th:href="@{/book/{id}(id=${venue.id})}">
-                    Book Venue
+                <!-- Navigate to Booking Page -->
+                <a th:href="@{/book/{id}(id=${venue.id})}" class="btn btn-primary btn-block">
+                    Book this Venue
                 </a>
-
             </div>
 
         </div>
 
     </main>
 
-</body>
+    <!-- Reusable Footer -->
+    <footer th:replace="~{layout/fragments :: footer}"></footer>
 
+</body>
 </html>

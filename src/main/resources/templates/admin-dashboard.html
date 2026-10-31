@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout/fragments :: head('Admin Dashboard')}">
+    <meta charset="UTF-8">
+    <title>Admin Dashboard | Venue Resource Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <!-- Reusable Navbar -->
+    <nav th:replace="~{layout/fragments :: navbar('admin-dashboard')}"></nav>
+
+    <!-- Main Container -->
+    <main class="page-wrapper">
+
+        <!-- Reusable Notification Alerts -->
+        <div th:replace="~{layout/fragments :: alerts}"></div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Admin Dashboard</h1>
+                <p class="page-subtitle">
+                    System-wide metrics, venue utilization, and pending booking approvals.
+                </p>
+            </div>
+
+            <div>
+                <a th:href="@{/admin/bookings}" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Manage All Bookings
+                </a>
+            </div>
+        </div>
+
+        <!-- ==============================================================
+             SYSTEM METRIC STAT CARDS (Real Backend Data)
+             ============================================================== -->
+        <div class="stats-grid" th:if="${stats != null}">
+
+            <!-- Total Users -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" th:text="${stats.totalUsers}">0</span>
+                    <span class="stat-label">Registered Users</span>
+                </div>
+            </div>
+
+            <!-- Total Venues -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" th:text="${stats.totalVenues}">0</span>
+                    <span class="stat-label">Total Venues</span>
+                </div>
+            </div>
+
+            <!-- Total Bookings -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <line x1="16" x2="16" y1="2" y2="6"/>
+                        <line x1="8" x2="8" y1="2" y2="6"/>
+                        <line x1="3" x2="21" y1="10" y2="10"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" th:text="${stats.totalBookings}">0</span>
+                    <span class="stat-label">Total Bookings</span>
+                </div>
+            </div>
+
+            <!-- Pending Approvals -->
+            <div class="stat-card">
+                <div class="stat-icon pending">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" th:text="${stats.pendingApprovals}">0</span>
+                    <span class="stat-label">Pending Approval</span>
+                </div>
+            </div>
+
+            <!-- Approved Bookings -->
+            <div class="stat-card">
+                <div class="stat-icon confirmed">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" th:text="${stats.confirmedBookings}">0</span>
+                    <span class="stat-label">Approved</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ==============================================================
+             VENUE UTILIZATION OVERVIEW
+             ============================================================== -->
+        <div class="card" th:if="${stats != null}">
+            <div class="card-header">
+                <h2>Venue Utilization Overview</h2>
+                <a th:href="@{/venues}" class="btn btn-secondary btn-sm">View Catalogue</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Venue</th>
+                            <th>Location</th>
+                            <th>Capacity</th>
+                            <th>Total Reservations</th>
+                            <th>Active Bookings</th>
+                            <th>Confirmed Bookings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="util : ${stats.venueUtilizations}">
+                            <td>
+                                <strong th:text="${util.venue.name}">Venue Name</strong>
+                            </td>
+                            <td th:text="${util.venue.location}">Main Building</td>
+                            <td>
+                                <span class="venue-capacity-pill" th:text="${util.venue.capacity} + ' seats'">120 seats</span>
+                            </td>
+                            <td>
+                                <strong th:text="${util.totalBookings}">0</strong>
+                            </td>
+                            <td>
+                                <span class="status-badge CONFIRMED" th:text="${util.activeBookings} + ' active'">0 active</span>
+                            </td>
+                            <td>
+                                <span th:text="${util.confirmedBookings} + ' confirmed'">0 confirmed</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==============================================================
+             RECENT BOOKING REQUESTS (WITH QUICK APPROVAL)
+             ============================================================== -->
+        <div class="card" th:if="${stats != null}">
+            <div class="card-header">
+                <h2>Recent Booking Requests</h2>
+                <a th:href="@{/admin/bookings}" class="btn btn-primary btn-sm">View All & Confirm</a>
+            </div>
+
+            <div th:if="${#lists.isEmpty(stats.recentBookings)}">
+                <p style="color: var(--gray-500); padding: 1rem 0;">
+                    No booking requests in the system yet.
+                </p>
+            </div>
+
+            <div class="table-responsive" th:unless="${#lists.isEmpty(stats.recentBookings)}">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Requested By</th>
+                            <th>Venue</th>
+                            <th>Date</th>
+                            <th>Slot</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="booking : ${stats.recentBookings}">
+                            <td th:text="'#' + ${booking.id}">#1</td>
+                            <td>
+                                <strong th:text="${booking.user.name}">User Name</strong>
+                                <div style="font-size: 0.8rem; color: var(--gray-500);" th:text="${booking.user.email}">user@example.com</div>
+                            </td>
+                            <td th:text="${booking.venue.name}">Seminar Hall</td>
+                            <td th:text="${booking.bookingDate}">2026-10-31</td>
+                            <td th:text="${booking.slot}">MORNING</td>
+                            <td>
+                                <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">PENDING</span>
+                            </td>
+                            <td>
+                                <form th:if="${booking.status == 'PENDING'}"
+                                      th:action="@{/admin/bookings/{id}/confirm(id=${booking.id})}"
+                                      method="post" style="margin: 0;">
+                                    <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                                    <button type="submit" class="btn btn-success btn-sm">Confirm</button>
+                                </form>
+                                <span th:unless="${booking.status == 'PENDING'}" style="color: var(--gray-400); font-size: 0.85rem;">
+                                    Processed
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Reusable Footer -->
+    <footer th:replace="~{layout/fragments :: footer}"></footer>
+
+</body>
+</html>

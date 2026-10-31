@@ -1,374 +1,974 @@
+/* ==========================================================================
+   Venue Resource Booking System - Modern Light Theme
+   Primary Palette: Navy Blue, White, Light Grey
+   ========================================================================== */
+
+:root {
+    --navy-950: #0a0f1d;
+    --navy-900: #0f172a;
+    --navy-800: #1e293b;
+    --navy-700: #334155;
+    --navy-600: #475569;
+
+    --primary: #1e3a8a;
+    --primary-hover: #172554;
+    --primary-light: #eff6ff;
+    --primary-border: #bfdbfe;
+
+    --accent-blue: #2563eb;
+    --accent-hover: #1d4ed8;
+
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+
+    --white: #ffffff;
+
+    --success: #15803d;
+    --success-bg: #dcfce7;
+    --success-border: #86efac;
+    --success-text: #166534;
+
+    --warning: #b45309;
+    --warning-bg: #fef3c7;
+    --warning-border: #fcd34d;
+    --warning-text: #92400e;
+
+    --danger: #b91c1c;
+    --danger-bg: #fee2e2;
+    --danger-border: #fca5a5;
+    --danger-text: #991b1b;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
 * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f4f6f9;
-    color: #1f2937;
+    font-family: var(--font-sans);
+    background-color: var(--gray-50);
+    color: var(--gray-800);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* =========================
-   Navbar
-   ========================= */
+/* ==========================================================================
+   Navigation Bar
+   ========================================================================== */
 
 .navbar {
-    background: #1f2937;
-    color: white;
-    padding: 18px 8%;
+    background: var(--navy-900);
+    color: var(--white);
+    padding: 0 2rem;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--white);
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+}
+
+.nav-brand svg {
+    color: #60a5fa;
+}
+
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none;
+}
+
+.nav-link {
+    color: #cbd5e1;
+    text-decoration: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.925rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.nav-link:hover {
+    color: var(--white);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.nav-link.active {
+    color: var(--white);
+    background-color: var(--primary);
+    font-weight: 600;
+}
+
+.nav-user-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.user-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #e2e8f0;
+}
+
+.role-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(96, 165, 250, 0.2);
+    color: #93c5fd;
+    border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.role-tag.admin {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fde68a;
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+.logout-form {
+    margin: 0;
+    display: inline-flex;
+}
+
+.btn-nav-logout {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e2e8f0;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-nav-logout:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    color: #fca5a5;
+}
+
+/* ==========================================================================
+   Page Layout & Containers
+   ========================================================================== */
+
+.page-wrapper {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.page-title {
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: var(--navy-900);
+    letter-spacing: -0.025em;
+}
+
+.page-subtitle {
+    color: var(--gray-500);
+    font-size: 0.975rem;
+    margin-top: 0.35rem;
+}
+
+/* ==========================================================================
+   Cards & Surfaces
+   ========================================================================== */
+
+.card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 1.75rem;
+    margin-bottom: 1.75rem;
+    transition: border-color 0.15s ease;
+}
+
+.card:hover {
+    border-color: var(--gray-300);
+}
+
+.card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--gray-100);
 }
 
-.navbar h2 {
-    margin: 0;
+.card-header h2,
+.card-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--navy-900);
 }
 
-.navbar a {
-    color: white;
-    text-decoration: none;
-    margin-left: 20px;
+/* ==========================================================================
+   Stat / Metric Cards (Dashboards)
+   ========================================================================== */
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
 }
 
-/* =========================
-   Main Container
-   ========================= */
-
-.container {
-    width: 90%;
-    max-width: 950px;
-    margin: 70px auto;
-    background: white;
-    padding: 50px;
-    border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-    text-align: center;
+.stat-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 1.35rem;
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.container h1 {
-    margin-top: 0;
-    font-size: 36px;
-    color: #111827;
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
-.container h2 {
-    color: #374151;
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-light);
+    color: var(--primary);
+    flex-shrink: 0;
 }
 
-.container p {
-    color: #6b7280;
-    line-height: 1.7;
-    font-size: 17px;
+.stat-icon.pending {
+    background: var(--warning-bg);
+    color: var(--warning);
 }
 
-/* =========================
+.stat-icon.confirmed {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.stat-icon.cancelled {
+    background: var(--gray-100);
+    color: var(--gray-600);
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--navy-900);
+    line-height: 1.1;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background: var(--white);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.925rem;
+    text-align: left;
+}
+
+.data-table th {
+    background: var(--gray-50);
+    color: var(--navy-700);
+    font-weight: 600;
+    padding: 0.85rem 1.15rem;
+    border-bottom: 1px solid var(--gray-200);
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 0.95rem 1.15rem;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+    vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+    background-color: #fcfdfe;
+}
+
+/* ==========================================================================
+   Badges (Status Indicators)
+   ========================================================================== */
+
+.status-badge,
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-full);
+    font-size: 0.775rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+.status-badge.PENDING,
+.badge-pending {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+    border-color: var(--warning-border);
+}
+
+.status-badge.CONFIRMED,
+.badge-confirmed {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+    border-color: var(--success-border);
+}
+
+.status-badge.CANCELLED,
+.badge-cancelled {
+    background-color: var(--gray-100);
+    color: var(--gray-600);
+    border-color: var(--gray-300);
+}
+
+/* ==========================================================================
    Buttons
-   ========================= */
-
-.actions {
-    margin-top: 35px;
-}
+   ========================================================================== */
 
 .btn {
-    display: inline-block;
-    padding: 12px 24px;
-    margin: 6px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 15px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.btn:hover {
-    background: #1d4ed8;
-    transform: translateY(-1px);
-}
-
-/* =========================
-   Forms
-   ========================= */
-
-.form-container {
-    max-width: 520px;
-}
-
-.form-group {
-    margin: 20px 0;
-    text-align: left;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.925rem;
     font-weight: 600;
-    color: #374151;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease-in-out;
+    line-height: 1.3;
 }
 
-.form-group input,
-.form-group select {
+.btn-primary {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    color: var(--white);
+}
+
+.btn-secondary {
+    background-color: var(--white);
+    color: var(--navy-800);
+    border-color: var(--gray-300);
+}
+
+.btn-secondary:hover {
+    background-color: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+.btn-success {
+    background-color: var(--success);
+    color: var(--white);
+}
+
+.btn-success:hover {
+    background-color: #166534;
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: var(--white);
+}
+
+.btn-danger:hover {
+    background-color: #991b1b;
+}
+
+.btn-outline-danger {
+    background-color: transparent;
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--danger-bg);
+    border-color: var(--danger);
+}
+
+.btn-sm {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.825rem;
+}
+
+.btn-block {
     width: 100%;
-    padding: 13px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 15px;
-    outline: none;
 }
 
-.form-group input:focus,
-.form-group select:focus {
-    border-color: #2563eb;
-}
-
-.form-footer {
-    margin-top: 25px;
-}
-
-/* =========================
-   Messages
-   ========================= */
+/* ==========================================================================
+   Alerts & Notifications
+   ========================================================================== */
 
 .alert {
-    padding: 13px;
-    margin: 20px 0;
-    border-radius: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.95rem 1.15rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1.5rem;
+    font-size: 0.925rem;
+    border: 1px solid transparent;
+}
+
+.alert svg {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+.alert.success,
+.alert-success {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+    border-color: var(--success-border);
+}
+
+.alert.error,
+.alert-error {
+    background-color: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
+}
+
+.alert.info,
+.alert-info {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary-border);
+}
+
+/* ==========================================================================
+   Forms & Inputs
+   ========================================================================== */
+
+.form-group {
+    margin-bottom: 1.25rem;
     text-align: left;
 }
 
-.alert.error {
-    background: #fee2e2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
+.form-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--navy-800);
 }
 
-.alert.success {
-    background: #dcfce7;
-    border: 1px solid #bbf7d0;
-    color: #166534;
+.form-control,
+.form-select {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: var(--gray-800);
+    background-color: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* =========================
-   Links
-   ========================= */
-
-a {
-    color: #2563eb;
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
-a:hover {
+.form-text {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    margin-top: 0.35rem;
+}
+
+/* ==========================================================================
+   Authentication Pages (Login & Register)
+   ========================================================================== */
+
+.auth-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 140px);
+    padding: 2rem 1rem;
+}
+
+.auth-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 440px;
+    padding: 2.25rem;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+}
+
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--navy-900);
+}
+
+.auth-subtitle {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+    margin-top: 0.35rem;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--gray-100);
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.auth-footer a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   Venue Catalogue Grid
+   ========================================================================== */
+
+.venue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.venue-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 1.6rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.venue-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-border);
+}
+
+.venue-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.venue-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--navy-900);
+}
+
+.venue-capacity-pill {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 0.775rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-full);
+}
+
+.venue-meta {
+    list-style: none;
+    margin-bottom: 1.5rem;
+}
+
+.venue-meta li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+}
+
+.venue-meta li svg {
+    color: var(--gray-400);
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Booking Workflow (Step Cards)
+   ========================================================================== */
+
+.booking-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.75rem;
+}
+
+.step-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 1.75rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.step-badge {
+    display: inline-block;
+    background: var(--primary);
+    color: var(--white);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.04em;
+}
+
+.slot-availability-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.slot-box {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem;
+    text-align: center;
+    background: var(--gray-50);
+}
+
+.slot-box.available {
+    background: var(--success-bg);
+    border-color: var(--success-border);
+}
+
+.slot-box.booked {
+    background: var(--gray-100);
+    border-color: var(--gray-300);
+    opacity: 0.75;
+}
+
+.slot-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0.35rem;
+    color: var(--navy-900);
+}
+
+/* ==========================================================================
+   Utilization Progress Bars (Admin)
+   ========================================================================== */
+
+.progress-container {
+    background: var(--gray-100);
+    border-radius: var(--radius-full);
+    height: 8px;
+    width: 100%;
+    overflow: hidden;
+    margin-top: 0.4rem;
+}
+
+.progress-bar {
+    background: var(--primary);
+    height: 100%;
+    border-radius: var(--radius-full);
+}
+
+/* ==========================================================================
+   Landing Hero Section (Guest View)
+   ========================================================================== */
+
+.hero-section {
+    text-align: center;
+    padding: 3.5rem 1rem 4rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-title {
+    font-size: 2.75rem;
+    font-weight: 800;
+    color: var(--navy-950);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+}
+
+.hero-title span {
+    color: var(--accent-blue);
+}
+
+.hero-desc {
+    font-size: 1.15rem;
+    color: var(--gray-600);
+    margin: 1.25rem auto 2.25rem;
+    max-width: 620px;
+    line-height: 1.6;
+}
+
+.hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3.5rem;
+}
+
+.feature-box {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 1.75rem;
+    text-align: left;
+    box-shadow: var(--shadow-sm);
+}
+
+.feature-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.feature-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--navy-900);
+    margin-bottom: 0.5rem;
+}
+
+.feature-text {
+    font-size: 0.9rem;
+    color: var(--gray-600);
+    line-height: 1.5;
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+
+.footer {
+    background: var(--white);
+    border-top: 1px solid var(--gray-200);
+    padding: 1.5rem 2rem;
+    margin-top: auto;
+    font-size: 0.85rem;
+    color: var(--gray-500);
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.footer a {
+    color: var(--gray-600);
     text-decoration: none;
 }
 
-/* =========================
-   Responsive
-   ========================= */
+.footer a:hover {
+    color: var(--primary);
+}
 
-@media (max-width: 600px) {
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
 
-    .container {
-        width: 92%;
-        margin: 30px auto;
-        padding: 30px 20px;
+@media (max-width: 900px) {
+    .booking-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        height: auto;
+        padding: 1rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
     }
 
-    .container h1 {
-        font-size: 28px;
+    .nav-menu {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
-    .btn {
-        display: block;
-        width: 100%;
-        margin: 10px 0;
+    .nav-user-section {
+        margin-left: 0;
+        padding-left: 0;
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        padding-top: 0.75rem;
+        justify-content: center;
     }
 
+    .page-wrapper {
+        padding: 1.5rem 1rem;
+    }
 
-    /* Task 6 - Venue Catalogue */
+    .hero-title {
+        font-size: 2.1rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
 
     .venue-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 24px;
-        margin-top: 35px;
-        text-align: left;
+        grid-template-columns: 1fr;
     }
-
-    .venue-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 25px;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .venue-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-    }
-
-    .venue-card h2 {
-        font-size: 21px;
-        margin-top: 0;
-        color: #111827;
-    }
-
-    .venue-card p {
-        font-size: 14px;
-        line-height: 1.6;
-        color: #4b5563;
-    }
-
-    .venue-card .btn {
-        margin-top: 15px;
-    }
-
-    @media (max-width: 600px) {
-        .venue-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-
-    /* Task 6B - Booking Page */
-
-    .venue-details,
-    .availability-section,
-    .availability-results,
-    .booking-section,
-    .booking-info {
-        background: #ffffff;
-        padding: 22px;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        margin: 22px 0;
-        text-align: left;
-    }
-
-    .venue-details h2,
-    .availability-section h2,
-    .availability-results h2,
-    .booking-section h2 {
-        margin-top: 0;
-        color: #111827;
-    }
-
-    .availability-results .booking-table {
-        margin-top: 15px;
-    }
-
-    .booking-info ul {
-        padding-left: 22px;
-        line-height: 1.9;
-        color: #4b5563;
-    }
-
-    .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 25px;
-    }
-
-    .form-group input[type="date"],
-    .form-group select {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        font-size: 15px;
-        box-sizing: border-box;
-        background: white;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus {
-        outline: none;
-        border-color: #2563eb;
-    }
-
-
-    /* Task 6C - Booking actions */
-
-    .btn-success {
-        background-color: #15803d;
-        color: #ffffff;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-success:hover {
-        background-color: #166534;
-    }
-
-    .btn-danger {
-        background-color: #dc2626;
-        color: #ffffff;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-danger:hover {
-        background-color: #b91c1c;
-    }
-
-    .booking-table form {
-        margin: 0;
-    }
-
-    .booking-table .btn {
-        display: inline-block;
-        padding: 9px 14px;
-        font-size: 13px;
-        white-space: nowrap;
-    }
-
-    .alert.success {
-        padding: 12px 16px;
-        background: #dcfce7;
-        color: #166534;
-        border-radius: 8px;
-        margin: 15px 0;
-    }
-
-    .alert.error {
-        padding: 12px 16px;
-        background: #fee2e2;
-        color: #991b1b;
-        border-radius: 8px;
-        margin: 15px 0;
-    }
-
-
-    /* Task 6D - POST Logout Button */
-
-    .navbar>div {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 18px;
-    }
-
-    .logout-form {
-        display: inline-flex;
-        margin: 0;
-    }
-
-    .nav-logout {
-        background: transparent;
-        border: none;
-        color: inherit;
-        font: inherit;
-        cursor: pointer;
-        padding: 0;
-        text-decoration: none;
-    }
-
-    .nav-logout:hover {
-        text-decoration: underline;
-    }
-
 }

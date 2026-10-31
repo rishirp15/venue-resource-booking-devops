@@ -1,4 +1,3 @@
-
 package com.rishi.venue.controller;
 
 import com.rishi.venue.model.User;
@@ -40,13 +39,33 @@ public class AdminController {
         return user != null && "ADMIN".equals(user.getRole());
     }
 
+    @GetMapping("")
+    public String adminRoot(HttpSession session) {
+        if (!isAdmin(session)) {
+            return "redirect:/login";
+        }
+        return "redirect:/admin/dashboard";
+    }
+
+    @GetMapping("/dashboard")
+    public String dashboard(HttpSession session, Model model) {
+
+        if (!isAdmin(session)) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("stats", bookingService.getAdminDashboardStats());
+
+        return "admin-dashboard";
+    }
+
     @GetMapping("/bookings")
     public String viewAllBookings(
             HttpSession session,
             Model model) {
 
         if (!isAdmin(session)) {
-            return "redirect:/";
+            return "redirect:/login";
         }
 
         model.addAttribute(
@@ -64,7 +83,7 @@ public class AdminController {
             RedirectAttributes redirectAttributes) {
 
         if (!isAdmin(session)) {
-            return "redirect:/";
+            return "redirect:/login";
         }
 
         try {
