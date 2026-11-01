@@ -84,15 +84,29 @@
                 <div class="form-group">
                     <label class="form-label" for="rescheduleSlot">Time Slot Window *</label>
                     <select id="rescheduleSlot" name="slot" class="form-select" onchange="syncSlotTimes(this.value)">
-                        <option value="MORNING" th:selected="${booking.slot == 'MORNING'}">
-                            Morning (09:00 - 12:00)
-                        </option>
-                        <option value="AFTERNOON" th:selected="${booking.slot == 'AFTERNOON'}">
-                            Afternoon (13:00 - 16:00)
-                        </option>
-                        <option value="EVENING" th:selected="${booking.slot == 'EVENING'}">
-                            Evening (17:00 - 20:00)
-                        </option>
+                        <optgroup label="Hourly Time Slots (08:00 - 20:00)">
+                            <option value="08:00 - 09:00" th:selected="${booking.slot == '08:00 - 09:00'}">08:00 - 09:00 (Early Morning)</option>
+                            <option value="09:00 - 10:00" th:selected="${booking.slot == '09:00 - 10:00'}">09:00 - 10:00 (Morning 1)</option>
+                            <option value="10:00 - 11:00" th:selected="${booking.slot == '10:00 - 11:00'}">10:00 - 11:00 (Morning 2)</option>
+                            <option value="11:00 - 12:00" th:selected="${booking.slot == '11:00 - 12:00'}">11:00 - 12:00 (Late Morning)</option>
+                            <option value="12:00 - 13:00" th:selected="${booking.slot == '12:00 - 13:00'}">12:00 - 13:00 (Lunch Period)</option>
+                            <option value="13:00 - 14:00" th:selected="${booking.slot == '13:00 - 14:00'}">13:00 - 14:00 (Early Afternoon)</option>
+                            <option value="14:00 - 15:00" th:selected="${booking.slot == '14:00 - 15:00'}">14:00 - 15:00 (Afternoon 1)</option>
+                            <option value="15:00 - 16:00" th:selected="${booking.slot == '15:00 - 16:00'}">15:00 - 16:00 (Afternoon 2)</option>
+                            <option value="16:00 - 17:00" th:selected="${booking.slot == '16:00 - 17:00'}">16:00 - 17:00 (Late Afternoon)</option>
+                            <option value="17:00 - 18:00" th:selected="${booking.slot == '17:00 - 18:00'}">17:00 - 18:00 (Early Evening)</option>
+                            <option value="18:00 - 19:00" th:selected="${booking.slot == '18:00 - 19:00'}">18:00 - 19:00 (Evening)</option>
+                            <option value="19:00 - 20:00" th:selected="${booking.slot == '19:00 - 20:00'}">19:00 - 20:00 (Late Evening)</option>
+                        </optgroup>
+                        <optgroup label="Session Blocks">
+                            <option value="MORNING" th:selected="${booking.slot == 'MORNING'}">Morning (09:00 - 12:00)</option>
+                            <option value="AFTERNOON" th:selected="${booking.slot == 'AFTERNOON'}">Afternoon (13:00 - 16:00)</option>
+                            <option value="EVENING" th:selected="${booking.slot == 'EVENING'}">Evening (17:00 - 20:00)</option>
+                            <option value="FULL_DAY" th:selected="${booking.slot == 'FULL_DAY'}">Full Day (08:00 - 20:00)</option>
+                        </optgroup>
+                        <optgroup label="Custom Range">
+                            <option value="CUSTOM" th:selected="${booking.slot == 'CUSTOM'}">Custom Start & End Time</option>
+                        </optgroup>
                     </select>
                 </div>
 
@@ -130,7 +144,14 @@
         function syncSlotTimes(slot) {
             const startInput = document.getElementById('startTime');
             const endInput = document.getElementById('endTime');
-            if (slot === 'MORNING') {
+            if (!slot) return;
+            if (slot.includes(' - ')) {
+                const parts = slot.split(' - ');
+                if (parts.length === 2) {
+                    startInput.value = parts[0].trim();
+                    endInput.value = parts[1].trim();
+                }
+            } else if (slot === 'MORNING') {
                 startInput.value = '09:00';
                 endInput.value = '12:00';
             } else if (slot === 'AFTERNOON') {
@@ -138,6 +159,9 @@
                 endInput.value = '16:00';
             } else if (slot === 'EVENING') {
                 startInput.value = '17:00';
+                endInput.value = '20:00';
+            } else if (slot === 'FULL_DAY') {
+                startInput.value = '08:00';
                 endInput.value = '20:00';
             }
         }

@@ -72,7 +72,7 @@ public class VenueController {
 
         Map<String, Boolean> availability = new LinkedHashMap<>();
 
-        for (String slot : BookingService.SLOTS) {
+        for (String slot : BookingService.HOURLY_SLOTS) {
             availability.put(
                     slot,
                     !bookingService.isSlotBooked(venue, date, slot)
@@ -84,8 +84,8 @@ public class VenueController {
             List<Venue> alternatives = bookingService.findAlternativeVenues(
                     venueId,
                     date,
-                    BookingService.MORNING_START,
-                    BookingService.EVENING_END,
+                    BookingService.OPERATING_OPEN,
+                    BookingService.OPERATING_CLOSE,
                     1
             );
             model.addAttribute("alternativeVenues", alternatives);
@@ -93,6 +93,7 @@ public class VenueController {
 
         model.addAttribute("venue", venue);
         model.addAttribute("slots", BookingService.SLOTS);
+        model.addAttribute("hourlySlots", BookingService.HOURLY_SLOTS);
         model.addAttribute("minDate", LocalDate.now());
         model.addAttribute("selectedDate", date);
         model.addAttribute("availability", availability);

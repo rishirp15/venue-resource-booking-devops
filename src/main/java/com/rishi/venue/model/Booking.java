@@ -206,12 +206,18 @@ public class Booking {
         if (startTime != null) {
             return startTime;
         }
-        if (slot == null) {
+        if (slot == null || slot.isBlank()) {
             return LocalTime.of(9, 0);
+        }
+        if (slot.contains("-")) {
+            try {
+                return LocalTime.parse(slot.split("-")[0].trim());
+            } catch (Exception ignored) {}
         }
         return switch (slot.toUpperCase()) {
             case "AFTERNOON" -> LocalTime.of(13, 0);
             case "EVENING" -> LocalTime.of(17, 0);
+            case "FULL_DAY", "FULL DAY" -> LocalTime.of(8, 0);
             default -> LocalTime.of(9, 0);
         };
     }
@@ -220,12 +226,18 @@ public class Booking {
         if (endTime != null) {
             return endTime;
         }
-        if (slot == null) {
+        if (slot == null || slot.isBlank()) {
             return LocalTime.of(12, 0);
+        }
+        if (slot.contains("-")) {
+            try {
+                return LocalTime.parse(slot.split("-")[1].trim());
+            } catch (Exception ignored) {}
         }
         return switch (slot.toUpperCase()) {
             case "AFTERNOON" -> LocalTime.of(16, 0);
             case "EVENING" -> LocalTime.of(20, 0);
+            case "FULL_DAY", "FULL DAY" -> LocalTime.of(20, 0);
             default -> LocalTime.of(12, 0);
         };
     }

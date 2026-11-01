@@ -62,11 +62,29 @@
 
                     <!-- Time Slot -->
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="slot" class="form-label">Time Slot</label>
+                        <label for="slot" class="form-label">Time Slot Window</label>
                         <select id="slot" name="slot" class="form-control">
-                            <option value="MORNING" th:selected="${slot == 'MORNING'}">Morning (09:00 - 12:00)</option>
-                            <option value="AFTERNOON" th:selected="${slot == 'AFTERNOON'}">Afternoon (13:00 - 16:00)</option>
-                            <option value="EVENING" th:selected="${slot == 'EVENING'}">Evening (17:00 - 20:00)</option>
+                            <option value="">Any Time Window (08:00 - 20:00)</option>
+                            <optgroup label="Hourly Time Slots (08:00 - 20:00)">
+                                <option value="08:00 - 09:00" th:selected="${slot == '08:00 - 09:00'}">08:00 - 09:00</option>
+                                <option value="09:00 - 10:00" th:selected="${slot == '09:00 - 10:00'}">09:00 - 10:00</option>
+                                <option value="10:00 - 11:00" th:selected="${slot == '10:00 - 11:00'}">10:00 - 11:00</option>
+                                <option value="11:00 - 12:00" th:selected="${slot == '11:00 - 12:00'}">11:00 - 12:00</option>
+                                <option value="12:00 - 13:00" th:selected="${slot == '12:00 - 13:00'}">12:00 - 13:00</option>
+                                <option value="13:00 - 14:00" th:selected="${slot == '13:00 - 14:00'}">13:00 - 14:00</option>
+                                <option value="14:00 - 15:00" th:selected="${slot == '14:00 - 15:00'}">14:00 - 15:00</option>
+                                <option value="15:00 - 16:00" th:selected="${slot == '15:00 - 16:00'}">15:00 - 16:00</option>
+                                <option value="16:00 - 17:00" th:selected="${slot == '16:00 - 17:00'}">16:00 - 17:00</option>
+                                <option value="17:00 - 18:00" th:selected="${slot == '17:00 - 18:00'}">17:00 - 18:00</option>
+                                <option value="18:00 - 19:00" th:selected="${slot == '18:00 - 19:00'}">18:00 - 19:00</option>
+                                <option value="19:00 - 20:00" th:selected="${slot == '19:00 - 20:00'}">19:00 - 20:00</option>
+                            </optgroup>
+                            <optgroup label="Session Blocks">
+                                <option value="MORNING" th:selected="${slot == 'MORNING'}">Morning (09:00 - 12:00)</option>
+                                <option value="AFTERNOON" th:selected="${slot == 'AFTERNOON'}">Afternoon (13:00 - 16:00)</option>
+                                <option value="EVENING" th:selected="${slot == 'EVENING'}">Evening (17:00 - 20:00)</option>
+                                <option value="FULL_DAY" th:selected="${slot == 'FULL_DAY'}">Full Day (08:00 - 20:00)</option>
+                            </optgroup>
                         </select>
                     </div>
 

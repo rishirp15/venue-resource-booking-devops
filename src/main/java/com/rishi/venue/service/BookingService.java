@@ -33,8 +33,34 @@ public class BookingService {
     public static final Set<String> ACTIVE_STATUSES =
             Set.of(STATUS_PENDING, STATUS_APPROVED, STATUS_CONFIRMED);
 
-    public static final List<String> SLOTS =
-            List.of("MORNING", "AFTERNOON", "EVENING");
+    public static final List<String> HOURLY_SLOTS = List.of(
+            "08:00 - 09:00",
+            "09:00 - 10:00",
+            "10:00 - 11:00",
+            "11:00 - 12:00",
+            "12:00 - 13:00",
+            "13:00 - 14:00",
+            "14:00 - 15:00",
+            "15:00 - 16:00",
+            "16:00 - 17:00",
+            "17:00 - 18:00",
+            "18:00 - 19:00",
+            "19:00 - 20:00"
+    );
+
+    public static final List<String> BLOCK_SLOTS = List.of(
+            "MORNING", "AFTERNOON", "EVENING", "FULL_DAY"
+    );
+
+    public static final List<String> SLOTS;
+    static {
+        List<String> list = new ArrayList<>(HOURLY_SLOTS);
+        list.addAll(BLOCK_SLOTS);
+        SLOTS = Collections.unmodifiableList(list);
+    }
+
+    public static final LocalTime OPERATING_OPEN = LocalTime.of(8, 0);
+    public static final LocalTime OPERATING_CLOSE = LocalTime.of(20, 0);
 
     public static final LocalTime MORNING_START = LocalTime.of(9, 0);
     public static final LocalTime MORNING_END = LocalTime.of(12, 0);
@@ -89,21 +115,35 @@ public class BookingService {
     }
 
     public static LocalTime getDefaultStartTime(String slot) {
-        if (slot == null) return MORNING_START;
-        return switch (slot.toUpperCase()) {
-            case "AFTERNOON" -> AFTERNOON_START;
-            case "EVENING" -> EVENING_START;
-            default -> MORNING_START;
-        };
+        if (slot == null || slot.isBlank()) return MORNING_START;
+        String s = slot.trim().toUpperCase();
+        if (s.startsWith("AFTERNOON")) return AFTERNOON_START;
+        if (s.startsWith("EVENING")) return EVENING_START;
+        if (s.startsWith("MORNING")) return MORNING_START;
+        if (s.startsWith("FULL_DAY") || s.startsWith("FULL DAY")) return OPERATING_OPEN;
+        if (s.contains("-")) {
+            try {
+                String startPart = s.split("-")[0].trim();
+                return LocalTime.parse(startPart);
+            } catch (Exception ignored) {}
+        }
+        return MORNING_START;
     }
 
     public static LocalTime getDefaultEndTime(String slot) {
-        if (slot == null) return MORNING_END;
-        return switch (slot.toUpperCase()) {
-            case "AFTERNOON" -> AFTERNOON_END;
-            case "EVENING" -> EVENING_END;
-            default -> MORNING_END;
-        };
+        if (slot == null || slot.isBlank()) return MORNING_END;
+        String s = slot.trim().toUpperCase();
+        if (s.startsWith("AFTERNOON")) return AFTERNOON_END;
+        if (s.startsWith("EVENING")) return EVENING_END;
+        if (s.startsWith("MORNING")) return MORNING_END;
+        if (s.startsWith("FULL_DAY") || s.startsWith("FULL DAY")) return OPERATING_CLOSE;
+        if (s.contains("-")) {
+            try {
+                String endPart = s.split("-")[1].trim();
+                return LocalTime.parse(endPart);
+            } catch (Exception ignored) {}
+        }
+        return MORNING_END;
     }
 
     public static boolean isOverlapping(
@@ -120,13 +160,25 @@ public class BookingService {
             LocalDate bookingDate,
             String slot) {
 
-        return bookingRepository
+        if (venue == null || bookingDate == null) {
+            return false;
+        }
+
+        boolean directSlotBooked = bookingRepository
                 .existsByVenueAndBookingDateAndSlotAndStatusIn(
                         venue,
                         bookingDate,
                         slot,
                         ACTIVE_STATUSES
                 );
+
+        if (directSlotBooked) {
+            return true;
+        }
+
+        LocalTime start = getDefaultStartTime(slot);
+        LocalTime end = getDefaultEndTime(slot);
+        return hasTimeConflict(venue, bookingDate, start, end, null);
     }
 
     public boolean hasTimeConflict(
@@ -168,6 +220,10 @@ public class BookingService {
             Long venueId,
             LocalDate bookingDate,
             String slot) {
+
+        if (slot == null || (!SLOTS.contains(slot.toUpperCase()) && !slot.contains("-"))) {
+            throw new IllegalArgumentException("Please select a valid booking slot.");
+        }
 
         LocalTime startTime = getDefaultStartTime(slot);
         LocalTime endTime = getDefaultEndTime(slot);
@@ -217,9 +273,14 @@ public class BookingService {
             );
         }
 
-        if (slot == null || slot.isBlank()) {
-            slot = startTime.getHour() < 12 ? "MORNING" :
-                    (startTime.getHour() < 17 ? "AFTERNOON" : "EVENING");
+        if (startTime.isBefore(OPERATING_OPEN) || endTime.isAfter(OPERATING_CLOSE)) {
+            throw new IllegalArgumentException(
+                    "Booking times must be within venue operating hours (08:00 - 20:00)."
+            );
+        }
+
+        if (slot == null || slot.isBlank() || "CUSTOM".equalsIgnoreCase(slot)) {
+            slot = startTime + " - " + endTime;
         }
 
         if (attendees == null || attendees < 1) {

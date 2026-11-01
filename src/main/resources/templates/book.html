@@ -134,18 +134,22 @@
 
                 <!-- Availability Result Badges -->
                 <div th:if="${availability != null}" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--gray-100);">
-                    <h4 style="font-size: 0.925rem; font-weight: 600; color: var(--navy-800); margin-bottom: 0.75rem;">
-                        Availability for <span th:text="${selectedDate}">2026-10-31</span>:
-                    </h4>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4 style="font-size: 0.925rem; font-weight: 600; color: var(--navy-800); margin: 0;">
+                            Hourly Schedule for <span th:text="${selectedDate}">2026-10-31</span> (08:00 - 20:00):
+                        </h4>
+                        <span style="font-size: 0.75rem; color: var(--gray-500);">Click available slot to select</span>
+                    </div>
 
                     <div class="slot-availability-grid">
                         <div class="slot-box" th:each="entry : ${availability}"
-                             th:classappend="${entry.value} ? 'available' : 'booked'">
-                            <div class="slot-name" th:text="${entry.key}">MORNING</div>
-                            <div style="font-size: 0.75rem; color: var(--gray-500); margin-bottom: 0.35rem;"
-                                 th:text="${entry.key == 'MORNING' ? '09:00 - 12:00' : (entry.key == 'AFTERNOON' ? '13:00 - 16:00' : '17:00 - 20:00')}">
-                                09:00 - 12:00
-                            </div>
+                             th:classappend="${entry.value} ? 'available' : 'booked'"
+                             th:onclick="${entry.value} ? 'selectAvailableSlot(\'' + ${entry.key} + '\')' : null"
+                             th:style="${entry.value} ? 'cursor: pointer; transition: all 0.15s ease;' : 'cursor: not-allowed; opacity: 0.6;'">
+                            <div class="slot-name" th:text="${entry.key}">08:00 - 09:00</div>
+                            <div style="font-size: 0.75rem; margin-bottom: 0.35rem;"
+                                 th:style="${entry.value} ? 'color: #15803d; font-weight: 500;' : 'color: var(--gray-500);'"
+                                 th:text="${entry.value ? 'Click to select' : 'Booked'}">Click to select</div>
                             <span class="status-badge" th:classappend="${entry.value} ? 'CONFIRMED' : 'CANCELLED'"
                                   th:text="${entry.value} ? 'Available' : 'Booked'">Available</span>
                         </div>
@@ -154,13 +158,13 @@
             </div>
 
             <!-- STEP 2: SUBMIT BOOKING -->
-            <div class="step-card">
+            <div class="step-card" id="bookingFormCard">
                 <span class="step-badge">Step 2</span>
                 <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--navy-900); margin-bottom: 0.5rem;">
                     Submit Booking Request
                 </h3>
                 <p style="color: var(--gray-500); font-size: 0.875rem; margin-bottom: 1.25rem;">
-                    Select your date, start and end times, and enter required attendees.
+                    Select your date, start and end times (08:00 - 20:00 operating window), and enter required attendees.
                 </p>
 
                 <form th:action="@{/book}" method="post">
@@ -177,30 +181,46 @@
 
                     <!-- Slot Selector -->
                     <div class="form-group">
-                        <label class="form-label" for="slot">Time Slot Window *</label>
+                        <label class="form-label" for="slot">Time Slot Selection *</label>
                         <select id="slot" name="slot" class="form-select" onchange="syncSlotTimes(this.value)">
-                            <option value="MORNING" th:selected="${selectedSlot == 'MORNING' or selectedSlot == null}">
-                                Morning (09:00 - 12:00)
-                            </option>
-                            <option value="AFTERNOON" th:selected="${selectedSlot == 'AFTERNOON'}">
-                                Afternoon (13:00 - 16:00)
-                            </option>
-                            <option value="EVENING" th:selected="${selectedSlot == 'EVENING'}">
-                                Evening (17:00 - 20:00)
-                            </option>
+                            <optgroup label="Hourly Time Slots (08:00 - 20:00)">
+                                <option value="08:00 - 09:00" th:selected="${selectedSlot == '08:00 - 09:00'}">08:00 - 09:00 (Early Morning)</option>
+                                <option value="09:00 - 10:00" th:selected="${selectedSlot == '09:00 - 10:00'}">09:00 - 10:00 (Morning 1)</option>
+                                <option value="10:00 - 11:00" th:selected="${selectedSlot == '10:00 - 11:00'}">10:00 - 11:00 (Morning 2)</option>
+                                <option value="11:00 - 12:00" th:selected="${selectedSlot == '11:00 - 12:00'}">11:00 - 12:00 (Late Morning)</option>
+                                <option value="12:00 - 13:00" th:selected="${selectedSlot == '12:00 - 13:00'}">12:00 - 13:00 (Lunch Period)</option>
+                                <option value="13:00 - 14:00" th:selected="${selectedSlot == '13:00 - 14:00'}">13:00 - 14:00 (Early Afternoon)</option>
+                                <option value="14:00 - 15:00" th:selected="${selectedSlot == '14:00 - 15:00'}">14:00 - 15:00 (Afternoon 1)</option>
+                                <option value="15:00 - 16:00" th:selected="${selectedSlot == '15:00 - 16:00'}">15:00 - 16:00 (Afternoon 2)</option>
+                                <option value="16:00 - 17:00" th:selected="${selectedSlot == '16:00 - 17:00'}">16:00 - 17:00 (Late Afternoon)</option>
+                                <option value="17:00 - 18:00" th:selected="${selectedSlot == '17:00 - 18:00'}">17:00 - 18:00 (Early Evening)</option>
+                                <option value="18:00 - 19:00" th:selected="${selectedSlot == '18:00 - 19:00'}">18:00 - 19:00 (Evening)</option>
+                                <option value="19:00 - 20:00" th:selected="${selectedSlot == '19:00 - 20:00'}">19:00 - 20:00 (Late Evening)</option>
+                            </optgroup>
+                            <optgroup label="Session Blocks">
+                                <option value="MORNING" th:selected="${selectedSlot == 'MORNING' or selectedSlot == null}">Morning Session (09:00 - 12:00)</option>
+                                <option value="AFTERNOON" th:selected="${selectedSlot == 'AFTERNOON'}">Afternoon Session (13:00 - 16:00)</option>
+                                <option value="EVENING" th:selected="${selectedSlot == 'EVENING'}">Evening Session (17:00 - 20:00)</option>
+                                <option value="FULL_DAY" th:selected="${selectedSlot == 'FULL_DAY'}">Full Day (08:00 - 20:00)</option>
+                            </optgroup>
+                            <optgroup label="Custom Time Window">
+                                <option value="CUSTOM" th:selected="${selectedSlot == 'CUSTOM'}">Custom Start & End Time</option>
+                            </optgroup>
                         </select>
                     </div>
 
                     <!-- Fine-grained Start & End Time -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
                         <div class="form-group">
-                            <label class="form-label" for="startTime">Start Time *</label>
+                            <label class="form-label" for="startTime">Start Time (Min: 08:00) *</label>
                             <input type="time" id="startTime" name="startTime" class="form-control"
+                                   min="08:00" max="20:00"
                                    th:value="${selectedStartTime != null ? selectedStartTime : '09:00'}" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="endTime">End Time *</label>
+                            <label class="form-label" for="endTime">End Time (Max: 20:00) *</label>
                             <input type="time" id="endTime" name="endTime" class="form-control"
+                                   min="08:00" max="20:00"
                                    th:value="${selectedEndTime != null ? selectedEndTime : '12:00'}" required>
                         </div>
                     </div>
@@ -235,12 +255,41 @@
 
     </main>
 
-    <!-- Simple client-side helper to synchronize start/end times when selecting slots -->
+    <!-- Client-side helper to synchronize start/end times and select available slots -->
     <script>
+        function selectAvailableSlot(slotText) {
+            const slotSelect = document.getElementById('slot');
+            if (slotSelect) {
+                let found = false;
+                for (let i = 0; i < slotSelect.options.length; i++) {
+                    if (slotSelect.options[i].value === slotText) {
+                        slotSelect.selectedIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    slotSelect.value = 'CUSTOM';
+                }
+                syncSlotTimes(slotText);
+            }
+            const formCard = document.getElementById('bookingFormCard');
+            if (formCard) {
+                formCard.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
         function syncSlotTimes(slot) {
             const startInput = document.getElementById('startTime');
             const endInput = document.getElementById('endTime');
-            if (slot === 'MORNING') {
+            if (!slot) return;
+            if (slot.includes(' - ')) {
+                const parts = slot.split(' - ');
+                if (parts.length === 2) {
+                    startInput.value = parts[0].trim();
+                    endInput.value = parts[1].trim();
+                }
+            } else if (slot === 'MORNING') {
                 startInput.value = '09:00';
                 endInput.value = '12:00';
             } else if (slot === 'AFTERNOON') {
@@ -248,6 +297,9 @@
                 endInput.value = '16:00';
             } else if (slot === 'EVENING') {
                 startInput.value = '17:00';
+                endInput.value = '20:00';
+            } else if (slot === 'FULL_DAY') {
+                startInput.value = '08:00';
                 endInput.value = '20:00';
             }
         }

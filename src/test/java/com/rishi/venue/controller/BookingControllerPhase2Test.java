@@ -154,4 +154,46 @@ class BookingControllerPhase2Test {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/my-bookings?success"));
     }
+
+    @Test
+    void shouldRenderBookingFormWithPathVariableVenueId() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", 5L);
+
+        Venue venue = new Venue("Auditorium", "Building A", 80);
+        venue.setId(10L);
+
+        when(venueRepository.findById(10L)).thenReturn(java.util.Optional.of(venue));
+
+        mockMvc.perform(get("/book/10").session(session))
+                .andExpect(status().isOk())
+                .andExpect(view().name("book"))
+                .andExpect(model().attributeExists("venue", "slots", "minDate"));
+    }
+
+    @Test
+    void shouldRenderBookingFormWithQueryParamVenueId() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", 5L);
+
+        Venue venue = new Venue("Auditorium", "Building A", 80);
+        venue.setId(10L);
+
+        when(venueRepository.findById(10L)).thenReturn(java.util.Optional.of(venue));
+
+        mockMvc.perform(get("/book").param("venueId", "10").session(session))
+                .andExpect(status().isOk())
+                .andExpect(view().name("book"))
+                .andExpect(model().attributeExists("venue", "slots", "minDate"));
+    }
+
+    @Test
+    void shouldRedirectToVenuesWhenNoVenueIdProvided() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("userId", 5L);
+
+        mockMvc.perform(get("/book").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/venues"));
+    }
 }

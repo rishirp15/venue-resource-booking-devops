@@ -8,6 +8,7 @@ import com.rishi.venue.service.BookingService;
 
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -31,9 +32,13 @@ public class BookingController {
         this.venueRepository = venueRepository;
     }
 
-    @GetMapping("/book")
+    @GetMapping({"/book", "/book/{venueId}"})
     public String showBookingForm(
-            @RequestParam(required = false) Long venueId,
+            @PathVariable(required = false) Long venueId,
+            @RequestParam(required = false, name = "venueId") Long queryVenueId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate bookingDate,
+            @RequestParam(required = false) String slot,
+            @RequestParam(required = false) Integer attendees,
             HttpSession session,
             Model model) {
 
@@ -41,11 +46,13 @@ public class BookingController {
             return "redirect:/login";
         }
 
-        if (venueId == null) {
+        Long targetVenueId = venueId != null ? venueId : queryVenueId;
+
+        if (targetVenueId == null) {
             return "redirect:/venues";
         }
 
-        Venue venue = venueRepository.findById(venueId).orElse(null);
+        Venue venue = venueRepository.findById(targetVenueId).orElse(null);
 
         if (venue == null) {
             return "redirect:/venues";
@@ -53,7 +60,17 @@ public class BookingController {
 
         model.addAttribute("venue", venue);
         model.addAttribute("slots", BookingService.SLOTS);
+        model.addAttribute("hourlySlots", BookingService.HOURLY_SLOTS);
         model.addAttribute("minDate", LocalDate.now());
+        if (bookingDate != null) {
+            model.addAttribute("selectedDate", bookingDate);
+        }
+        if (slot != null && !slot.isBlank()) {
+            model.addAttribute("selectedSlot", slot);
+        }
+        if (attendees != null && attendees > 0) {
+            model.addAttribute("selectedAttendees", attendees);
+        }
 
         return "book";
     }
@@ -110,6 +127,7 @@ public class BookingController {
 
             model.addAttribute("venue", venue);
             model.addAttribute("slots", BookingService.SLOTS);
+        model.addAttribute("hourlySlots", BookingService.HOURLY_SLOTS);
             model.addAttribute("minDate", LocalDate.now());
             model.addAttribute("selectedDate", bookingDate);
             model.addAttribute("selectedSlot", slot);
@@ -183,6 +201,7 @@ public class BookingController {
             model.addAttribute("booking", booking);
             model.addAttribute("venue", booking.getVenue());
             model.addAttribute("slots", BookingService.SLOTS);
+        model.addAttribute("hourlySlots", BookingService.HOURLY_SLOTS);
             model.addAttribute("minDate", LocalDate.now());
 
             return "reschedule";
@@ -244,6 +263,7 @@ public class BookingController {
                 model.addAttribute("booking", booking);
                 model.addAttribute("venue", booking.getVenue());
                 model.addAttribute("slots", BookingService.SLOTS);
+        model.addAttribute("hourlySlots", BookingService.HOURLY_SLOTS);
                 model.addAttribute("minDate", LocalDate.now());
                 model.addAttribute("selectedDate", bookingDate);
                 model.addAttribute("selectedSlot", slot);
