@@ -144,7 +144,7 @@
                     <div class="slot-availability-grid">
                         <div class="slot-box" th:each="entry : ${availability}"
                              th:classappend="${entry.value} ? 'available' : 'booked'"
-                             th:onclick="${entry.value} ? 'selectAvailableSlot(\'' + ${entry.key} + '\')' : null"
+                             th:data-slot="${entry.key}" th:data-available="${entry.value}" onclick="if(this.getAttribute('data-available') === 'true') selectAvailableSlot(this.getAttribute('data-slot'))"
                              th:style="${entry.value} ? 'cursor: pointer; transition: all 0.15s ease;' : 'cursor: not-allowed; opacity: 0.6;'">
                             <div class="slot-name" th:text="${entry.key}">08:00 - 09:00</div>
                             <div style="font-size: 0.75rem; margin-bottom: 0.35rem;"
