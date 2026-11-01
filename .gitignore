@@ -66,6 +66,7 @@ logs/
 *.temp
 *.swp
 *~
+~$*
 
 # ==============================
 # Environment / Secrets
