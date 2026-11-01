@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout/fragments :: head('Book Venue')}">
+    <meta charset="UTF-8">
+    <title>Book Venue | Venue Resource Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <!-- Reusable Navbar -->
+    <nav th:replace="~{layout/fragments :: navbar('venues')}"></nav>
+
+    <!-- Main Container -->
+    <main class="page-wrapper">
+
+        <!-- Reusable Notification Alerts -->
+        <div th:replace="~{layout/fragments :: alerts}"></div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Reserve Venue</h1>
+                <p class="page-subtitle">
+                    Select your date, start and end times, and specify attendee requirements.
+                </p>
+            </div>
+
+            <div>
+                <a th:href="@{/venues}" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Back to Venues
+                </a>
+            </div>
+        </div>
+
+        <!-- Venue Summary Card -->
+        <div class="card">
+            <div class="venue-card-header">
+                <div>
+                    <h2 class="venue-name" th:text="${venue.name}">Seminar Hall</h2>
+                    <p style="color: var(--gray-500); font-size: 0.9rem; margin-top: 0.25rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span th:text="${venue.location}">Main Building</span>
+                    </p>
+                </div>
+                <div>
+                    <span class="venue-capacity-pill" th:text="'Max Capacity: ' + ${venue.capacity} + ' Attendees'">Max Capacity: 120 Attendees</span>
+                    <span th:if="${venue.active == false}" class="status-badge CANCELLED" style="margin-left: 0.5rem;">Inactive</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================================================
+             SMART ALTERNATIVE SUGGESTIONS (If Requested Slot/Venue is Booked)
+             ============================================================== -->
+        <div class="card" th:if="${alternativeVenues != null and not #lists.isEmpty(alternativeVenues)}"
+             style="border-color: #93c5fd; background-color: #f0f7ff;">
+            <div class="card-header" style="border-bottom-color: #bfdbfe;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <h3 style="color: #1e3a8a; margin: 0; font-size: 1.1rem;">
+                        Smart Alternative Suggestions
+                    </h3>
+                </div>
+            </div>
+
+            <p style="color: var(--gray-700); font-size: 0.925rem; margin-bottom: 1.25rem;">
+                Looking for alternative options? The following suitable venues have capacity for your group and are available for your requested schedule:
+            </p>
+
+            <div class="venue-grid" style="margin-top: 0.75rem;">
+                <div class="venue-card" th:each="alt : ${alternativeVenues}" style="background: white;">
+                    <div>
+                        <div class="venue-card-header">
+                            <h4 class="venue-name" style="font-size: 1.1rem;" th:text="${alt.name}">Conference Room</h4>
+                            <span class="venue-capacity-pill" th:text="${alt.capacity} + ' Seats'">30 Seats</span>
+                        </div>
+                        <ul class="venue-meta">
+                            <li>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                <span th:text="${alt.location}">Admin Building</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <a th:href="@{/book/{id}(id=${alt.id})}" class="btn btn-secondary btn-block btn-sm">
+                        Switch to this Venue &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2-Step Booking Workflow Layout -->
+        <div class="booking-layout">
+
+            <!-- STEP 1: CHECK AVAILABILITY -->
+            <div class="step-card">
+                <span class="step-badge">Step 1</span>
+                <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--navy-900); margin-bottom: 0.5rem;">
+                    Check Slot Availability
+                </h3>
+                <p style="color: var(--gray-500); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                    Select your proposed date to inspect which time slots are vacant.
+                </p>
+
+                <form th:action="@{/venues/{id}/availability(id=${venue.id})}" method="get">
+                    <div class="form-group">
+                        <label class="form-label" for="availabilityDate">Target Date</label>
+                        <input type="date" id="availabilityDate" name="date" class="form-control"
+                               th:attr="min=${minDate}" th:value="${selectedDate}" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-secondary btn-block">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Inspect Availability
+                    </button>
+                </form>
+
+                <!-- Availability Result Badges -->
+                <div th:if="${availability != null}" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--gray-100);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4 style="font-size: 0.925rem; font-weight: 600; color: var(--navy-800); margin: 0;">
+                            Hourly Schedule for <span th:text="${selectedDate}">2026-10-31</span> (08:00 - 20:00):
+                        </h4>
+                        <span style="font-size: 0.75rem; color: var(--gray-500);">Click available slot to select</span>
+                    </div>
+
+                    <div class="slot-availability-grid">
+                        <div class="slot-box" th:each="entry : ${availability}"
+                             th:classappend="${entry.value} ? 'available' : 'booked'"
+                             th:onclick="${entry.value} ? 'selectAvailableSlot(\'' + ${entry.key} + '\')' : null"
+                             th:style="${entry.value} ? 'cursor: pointer; transition: all 0.15s ease;' : 'cursor: not-allowed; opacity: 0.6;'">
+                            <div class="slot-name" th:text="${entry.key}">08:00 - 09:00</div>
+                            <div style="font-size: 0.75rem; margin-bottom: 0.35rem;"
+                                 th:style="${entry.value} ? 'color: #15803d; font-weight: 500;' : 'color: var(--gray-500);'"
+                                 th:text="${entry.value ? 'Click to select' : 'Booked'}">Click to select</div>
+                            <span class="status-badge" th:classappend="${entry.value} ? 'CONFIRMED' : 'CANCELLED'"
+                                  th:text="${entry.value} ? 'Available' : 'Booked'">Available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: SUBMIT BOOKING -->
+            <div class="step-card" id="bookingFormCard">
+                <span class="step-badge">Step 2</span>
+                <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--navy-900); margin-bottom: 0.5rem;">
+                    Submit Booking Request
+                </h3>
+                <p style="color: var(--gray-500); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                    Select your date, start and end times (08:00 - 20:00 operating window), and enter required attendees.
+                </p>
+
+                <form th:action="@{/book}" method="post">
+                    <!-- CSRF Protection -->
+                    <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                    <input type="hidden" name="venueId" th:value="${venue.id}">
+
+                    <!-- Date Selection -->
+                    <div class="form-group">
+                        <label class="form-label" for="bookingDate">Booking Date *</label>
+                        <input type="date" id="bookingDate" name="bookingDate" class="form-control"
+                               th:attr="min=${minDate}" th:value="${selectedDate}" required>
+                    </div>
+
+                    <!-- Slot Selector -->
+                    <div class="form-group">
+                        <label class="form-label" for="slot">Time Slot Selection *</label>
+                        <select id="slot" name="slot" class="form-select" onchange="syncSlotTimes(this.value)">
+                            <optgroup label="Hourly Time Slots (08:00 - 20:00)">
+                                <option value="08:00 - 09:00" th:selected="${selectedSlot == '08:00 - 09:00'}">08:00 - 09:00 (Early Morning)</option>
+                                <option value="09:00 - 10:00" th:selected="${selectedSlot == '09:00 - 10:00'}">09:00 - 10:00 (Morning 1)</option>
+                                <option value="10:00 - 11:00" th:selected="${selectedSlot == '10:00 - 11:00'}">10:00 - 11:00 (Morning 2)</option>
+                                <option value="11:00 - 12:00" th:selected="${selectedSlot == '11:00 - 12:00'}">11:00 - 12:00 (Late Morning)</option>
+                                <option value="12:00 - 13:00" th:selected="${selectedSlot == '12:00 - 13:00'}">12:00 - 13:00 (Lunch Period)</option>
+                                <option value="13:00 - 14:00" th:selected="${selectedSlot == '13:00 - 14:00'}">13:00 - 14:00 (Early Afternoon)</option>
+                                <option value="14:00 - 15:00" th:selected="${selectedSlot == '14:00 - 15:00'}">14:00 - 15:00 (Afternoon 1)</option>
+                                <option value="15:00 - 16:00" th:selected="${selectedSlot == '15:00 - 16:00'}">15:00 - 16:00 (Afternoon 2)</option>
+                                <option value="16:00 - 17:00" th:selected="${selectedSlot == '16:00 - 17:00'}">16:00 - 17:00 (Late Afternoon)</option>
+                                <option value="17:00 - 18:00" th:selected="${selectedSlot == '17:00 - 18:00'}">17:00 - 18:00 (Early Evening)</option>
+                                <option value="18:00 - 19:00" th:selected="${selectedSlot == '18:00 - 19:00'}">18:00 - 19:00 (Evening)</option>
+                                <option value="19:00 - 20:00" th:selected="${selectedSlot == '19:00 - 20:00'}">19:00 - 20:00 (Late Evening)</option>
+                            </optgroup>
+                            <optgroup label="Session Blocks">
+                                <option value="MORNING" th:selected="${selectedSlot == 'MORNING' or selectedSlot == null}">Morning Session (09:00 - 12:00)</option>
+                                <option value="AFTERNOON" th:selected="${selectedSlot == 'AFTERNOON'}">Afternoon Session (13:00 - 16:00)</option>
+                                <option value="EVENING" th:selected="${selectedSlot == 'EVENING'}">Evening Session (17:00 - 20:00)</option>
+                                <option value="FULL_DAY" th:selected="${selectedSlot == 'FULL_DAY'}">Full Day (08:00 - 20:00)</option>
+                            </optgroup>
+                            <optgroup label="Custom Time Window">
+                                <option value="CUSTOM" th:selected="${selectedSlot == 'CUSTOM'}">Custom Start & End Time</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- Fine-grained Start & End Time -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="startTime">Start Time (Min: 08:00) *</label>
+                            <input type="time" id="startTime" name="startTime" class="form-control"
+                                   min="08:00" max="20:00"
+                                   th:value="${selectedStartTime != null ? selectedStartTime : '09:00'}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="endTime">End Time (Max: 20:00) *</label>
+                            <input type="time" id="endTime" name="endTime" class="form-control"
+                                   min="08:00" max="20:00"
+                                   th:value="${selectedEndTime != null ? selectedEndTime : '12:00'}" required>
+                        </div>
+                    </div>
+
+                    <!-- Attendees Input -->
+                    <div class="form-group">
+                        <label class="form-label" for="attendees">
+                            Number of Attendees *
+                            <span style="font-weight: normal; color: var(--gray-500); font-size: 0.8rem;"
+                                  th:text="'(Max: ' + ${venue.capacity} + ')'">(Max)</span>
+                        </label>
+                        <input type="number" id="attendees" name="attendees" class="form-control"
+                               min="1" th:attr="max=${venue.capacity}"
+                               th:value="${selectedAttendees != null ? selectedAttendees : 1}" required>
+                    </div>
+
+                    <!-- Purpose Input -->
+                    <div class="form-group">
+                        <label class="form-label" for="purpose">Event Purpose / Notes (Optional)</label>
+                        <input type="text" id="purpose" name="purpose" class="form-control"
+                               placeholder="e.g. Annual Department Seminar, Project Demo"
+                               th:value="${selectedPurpose}">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.5rem;">
+                        Confirm & Submit Booking
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Client-side helper to synchronize start/end times and select available slots -->
+    <script>
+        function selectAvailableSlot(slotText) {
+            const slotSelect = document.getElementById('slot');
+            if (slotSelect) {
+                let found = false;
+                for (let i = 0; i < slotSelect.options.length; i++) {
+                    if (slotSelect.options[i].value === slotText) {
+                        slotSelect.selectedIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    slotSelect.value = 'CUSTOM';
+                }
+                syncSlotTimes(slotText);
+            }
+            const formCard = document.getElementById('bookingFormCard');
+            if (formCard) {
+                formCard.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function syncSlotTimes(slot) {
+            const startInput = document.getElementById('startTime');
+            const endInput = document.getElementById('endTime');
+            if (!slot) return;
+            if (slot.includes(' - ')) {
+                const parts = slot.split(' - ');
+                if (parts.length === 2) {
+                    startInput.value = parts[0].trim();
+                    endInput.value = parts[1].trim();
+                }
+            } else if (slot === 'MORNING') {
+                startInput.value = '09:00';
+                endInput.value = '12:00';
+            } else if (slot === 'AFTERNOON') {
+                startInput.value = '13:00';
+                endInput.value = '16:00';
+            } else if (slot === 'EVENING') {
+                startInput.value = '17:00';
+                endInput.value = '20:00';
+            } else if (slot === 'FULL_DAY') {
+                startInput.value = '08:00';
+                endInput.value = '20:00';
+            }
+        }
+    </script>
+
+    <!-- Reusable Footer -->
+    <footer th:replace="~{layout/fragments :: footer}"></footer>
+
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout/fragments :: head('Booking Details')}">
+    <meta charset="UTF-8">
+    <title>Booking Details | Venue Resource Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <!-- Reusable Navbar -->
+    <nav th:replace="~{layout/fragments :: navbar(${isAdmin} ? 'admin-bookings' : 'my-bookings')}"></nav>
+
+    <!-- Main Container -->
+    <main class="page-wrapper">
+
+        <!-- Reusable Notification Alerts -->
+        <div th:replace="~{layout/fragments :: alerts}"></div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    Booking Details <span style="color: var(--gray-400); font-weight: normal;" th:text="'#' + ${booking.id}">#1</span>
+                </h1>
+                <p class="page-subtitle">
+                    Reservation overview, approval audit trail, and workflow management.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+                <a th:if="${isAdmin}" th:href="@{/admin/bookings}" class="btn btn-secondary">
+                    &larr; All Bookings
+                </a>
+                <a th:unless="${isAdmin}" th:href="@{/my-bookings}" class="btn btn-secondary">
+                    &larr; My Bookings
+                </a>
+            </div>
+        </div>
+
+        <div style="max-width: 820px; margin: 0 auto;">
+
+            <!-- Rejection Reason Callout (Prominently displayed if REJECTED) -->
+            <div th:if="${booking.status == 'REJECTED'}" class="rejection-callout">
+                <div class="rejection-callout-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Booking Request Rejected
+                </div>
+                <div class="rejection-callout-reason">
+                    <strong>Reason given:</strong>
+                    <span th:text="${booking.rejectionReason != null && !booking.rejectionReason.isBlank() ? booking.rejectionReason : 'No specific reason provided by administrator.'}">
+                        Venue is undergoing scheduled maintenance on this date.
+                    </span>
+                </div>
+            </div>
+
+            <!-- Booking Overview Card -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <div>
+                        <h2 th:text="${booking.venue.name}">Seminar Hall</h2>
+                        <span style="color: var(--gray-500); font-size: 0.875rem;" th:text="${booking.venue.location}">Main Building</span>
+                    </div>
+                    <span class="status-badge" th:classappend="${booking.status}" th:text="${booking.status}">PENDING</span>
+                </div>
+
+                <!-- Detailed Grid Information -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+                    <div>
+                        <h4 style="font-size: 0.8rem; color: var(--gray-500); text-transform: uppercase; margin-bottom: 0.35rem;">Reservation Date</h4>
+                        <p style="font-size: 1.05rem; font-weight: 600; color: var(--navy-900);"
+                           th:text="${#temporals.format(booking.bookingDate, 'EEEE, MMMM dd, yyyy')}">Monday, Nov 02, 2026</p>
+                    </div>
+
+                    <div>
+                        <h4 style="font-size: 0.8rem; color: var(--gray-500); text-transform: uppercase; margin-bottom: 0.35rem;">Time Window & Slot</h4>
+                        <p style="font-size: 1.05rem; font-weight: 600; color: var(--navy-900);">
+                            <span th:text="${booking.effectiveStartTime} + ' - ' + ${booking.effectiveEndTime}">09:00 - 12:00</span>
+                            <span style="font-size: 0.85rem; color: var(--gray-500); font-weight: normal;" th:text="'(' + ${booking.slot} + ')'">(MORNING)</span>
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 style="font-size: 0.8rem; color: var(--gray-500); text-transform: uppercase; margin-bottom: 0.35rem;">Attendees</h4>
+                        <p style="font-size: 1.05rem; font-weight: 600; color: var(--navy-900);"
+                           th:text="${booking.attendees} + ' People (Capacity: ' + ${booking.venue.capacity} + ')'">25 People (Capacity: 120)</p>
+                    </div>
+
+                    <div>
+                        <h4 style="font-size: 0.8rem; color: var(--gray-500); text-transform: uppercase; margin-bottom: 0.35rem;">Requested By</h4>
+                        <p style="font-size: 1.05rem; font-weight: 600; color: var(--navy-900);" th:text="${booking.user.name}">John Doe</p>
+                        <p style="font-size: 0.85rem; color: var(--gray-500);" th:text="${booking.user.email}">user@venue.com</p>
+                    </div>
+                </div>
+
+                <!-- Purpose / Description -->
+                <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--gray-100);">
+                    <h4 style="font-size: 0.8rem; color: var(--gray-500); text-transform: uppercase; margin-bottom: 0.35rem;">Event Purpose / Description</h4>
+                    <p style="color: var(--gray-700); font-size: 0.95rem;"
+                       th:text="${booking.purpose != null && !booking.purpose.isBlank() ? booking.purpose : 'No additional notes provided.'}">
+                        General department meeting.
+                    </p>
+                </div>
+
+                <!-- Action Controls Section -->
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-100); display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
+
+                    <!-- Admin Workflow Actions -->
+                    <th:block th:if="${isAdmin and booking.status == 'PENDING'}">
+                        <!-- Admin Approve -->
+                        <form th:action="@{/admin/bookings/{id}/approve(id=${booking.id})}" method="post" style="margin: 0;">
+                            <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                            <button type="submit" class="btn btn-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Approve Booking
+                            </button>
+                        </form>
+
+                        <!-- Admin Reject Button (Opens Modal) -->
+                        <button type="button" class="btn btn-danger"
+                                th:attr="data-id=${booking.id},data-venue=${booking.venue.name},data-user=${booking.user.name}"
+                                onclick="openRejectModal(this.getAttribute('data-id'), this.getAttribute('data-venue'), this.getAttribute('data-user'))">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Reject Booking
+                        </button>
+                    </th:block>
+
+                    <!-- User / Owner Reschedule Action -->
+                    <a th:if="${(isOwner or isAdmin) and (booking.status == 'PENDING' or booking.status == 'APPROVED' or booking.status == 'CONFIRMED')}"
+                       th:href="@{/bookings/{id}/reschedule(id=${booking.id})}" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 14 14"></polyline>
+                        </svg>
+                        Reschedule Booking
+                    </a>
+
+                    <!-- User / Owner Cancel Action -->
+                    <form th:if="${(isOwner or isAdmin) and (booking.status == 'PENDING' or booking.status == 'APPROVED' or booking.status == 'CONFIRMED')}"
+                          th:action="@{/bookings/{id}/cancel(id=${booking.id})}"
+                          method="post"
+                          onsubmit="return confirm('Are you sure you want to cancel this booking? This will release the slot.');"
+                          style="margin: 0;">
+                        <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                        <button type="submit" class="btn btn-outline" style="color: var(--danger); border-color: var(--danger-border);">
+                            Cancel Reservation
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+
+            <!-- ==============================================================
+                 APPROVAL & STATUS HISTORY TIMELINE
+                 ============================================================== -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Approval & Status History</h2>
+                    <span style="font-size: 0.85rem; color: var(--gray-500);">Complete audit trail of status changes</span>
+                </div>
+
+                <div th:if="${#lists.isEmpty(history)}" style="padding: 1.5rem; text-align: center; color: var(--gray-500);">
+                    No status history records available for this booking.
+                </div>
+
+                <div class="timeline-container" th:unless="${#lists.isEmpty(history)}">
+                    <div class="timeline-item" th:each="entry : ${history}">
+                        <div class="timeline-marker" th:classappend="${entry.newStatus}"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <div class="timeline-title">
+                                    <span th:if="${entry.previousStatus != null && !entry.previousStatus.isBlank()}">
+                                        <span class="status-badge" th:classappend="${entry.previousStatus}" th:text="${entry.previousStatus}">PENDING</span>
+                                        &rarr;
+                                    </span>
+                                    <span class="status-badge" th:classappend="${entry.newStatus}" th:text="${entry.newStatus}">APPROVED</span>
+                                </div>
+                                <span class="timeline-time" th:text="${#temporals.format(entry.timestamp, 'MMM dd, yyyy HH:mm:ss')}">
+                                    Oct 31, 2026 14:30:00
+                                </span>
+                            </div>
+
+                            <div class="timeline-performer">
+                                <strong>Action Performed By:</strong>
+                                <span th:text="${entry.actionPerformedBy}">admin@venue.com (ADMIN)</span>
+                            </div>
+
+                            <div th:if="${entry.remarks != null && !entry.remarks.isBlank()}" class="timeline-remarks">
+                                <span style="font-weight: 600; color: var(--gray-600); font-size: 0.775rem; text-transform: uppercase;">Remarks / Reason:</span>
+                                <div th:text="${entry.remarks}" style="margin-top: 0.2rem;">Approved by administrator.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Reusable Footer -->
+    <footer th:replace="~{layout/fragments :: footer}"></footer>
+
+    <!-- Rejection Reason Modal Dialog (Available if Admin) -->
+    <div th:if="${isAdmin}" id="rejectionModal" class="rejection-dialog" onclick="handleBackdropClick(event)">
+        <div class="dialog-box" onclick="event.stopPropagation()">
+            <div class="dialog-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                Reject Booking Request
+            </div>
+            <p class="dialog-desc">
+                Provide a reason for rejecting booking <strong id="modalBookingIdLabel">#1</strong>.
+            </p>
+
+            <form id="rejectForm" method="post" action="">
+                <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                <div class="form-group">
+                    <label for="rejectionReason" class="form-label">
+                        Rejection Reason <span style="color: var(--danger);">*</span>
+                    </label>
+                    <textarea id="rejectionReason" name="rejectionReason" class="form-control" rows="3"
+                              placeholder="e.g., Requested venue is undergoing maintenance." required></textarea>
+                </div>
+
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        Confirm Rejection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        function openRejectModal(bookingId, venueName, userName) {
+            var modal = document.getElementById('rejectionModal');
+            if (!modal) return;
+            var form = document.getElementById('rejectForm');
+            var idLabel = document.getElementById('modalBookingIdLabel');
+            var reasonInput = document.getElementById('rejectionReason');
+
+            var contextPath = /*[[@{/}]]*/ '/';
+            if (contextPath.endsWith('/')) {
+                contextPath = contextPath.substring(0, contextPath.length - 1);
+            }
+            form.action = contextPath + '/admin/bookings/' + bookingId + '/reject';
+
+            if (idLabel) idLabel.innerText = '#' + bookingId;
+            if (reasonInput) reasonInput.value = '';
+
+            modal.classList.add('active');
+            if (reasonInput) reasonInput.focus();
+        }
+
+        function closeRejectModal() {
+            var modal = document.getElementById('rejectionModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function handleBackdropClick(event) {
+            if (event.target.id === 'rejectionModal') {
+                closeRejectModal();
+            }
+        }
+    </script>
+</body>
+</html>

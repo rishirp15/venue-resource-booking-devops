@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout/fragments :: head('Venue Management')}">
+    <meta charset="UTF-8">
+    <title>Venue Management | Venue Resource Booking</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav th:replace="~{layout/fragments :: navbar('admin-venues')}"></nav>
+
+    <!-- Main Content -->
+    <main class="page-wrapper">
+
+        <!-- Flash Alerts -->
+        <div th:replace="~{layout/fragments :: alerts}"></div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Venue Management</h1>
+                <p class="page-subtitle">
+                    Configure institutional venues, manage seating capacities, update equipment & amenities, or toggle venue availability.
+                </p>
+            </div>
+            <div>
+                <a th:href="@{/admin/dashboard}" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: flex-start;">
+            
+            <!-- Venues List Card -->
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 class="card-title">Configured Venues</h3>
+                    <span class="badge badge-info" th:text="${#lists.size(venues)} + ' Venues'">0 Venues</span>
+                </div>
+
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Venue</th>
+                                    <th>Location</th>
+                                    <th>Capacity</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="v : ${venues}">
+                                    <td>
+                                        <div style="font-weight: 600; color: #1e293b;" th:text="${v.name}">Venue Name</div>
+                                        <div style="font-size: 0.8rem; color: #64748b;" th:text="${v.facilities}">Amenities</div>
+                                    </td>
+                                    <td th:text="${v.location}">Location</td>
+                                    <td>
+                                        <span style="font-weight: 600;" th:text="${v.capacity}">100</span> seats
+                                    </td>
+                                    <td>
+                                        <span class="role-tag" th:text="${v.venueType}">GENERAL</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge"
+                                              th:classappend="${v.active} ? 'approved' : 'rejected'"
+                                              th:text="${v.active} ? 'ACTIVE' : 'INACTIVE'">
+                                            ACTIVE
+                                        </span>
+                                    </td>
+                                    <td style="white-space: nowrap;">
+                                        <!-- Toggle Status Form -->
+                                        <form th:action="@{/admin/venues/{id}/toggle-status(id=${v.id})}" method="post" style="display: inline;">
+                                            <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                                            <button type="submit" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;"
+                                                    th:text="${v.active} ? 'Deactivate' : 'Activate'">
+                                                Toggle
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+
+                                <tr th:if="${#lists.isEmpty(venues)}">
+                                    <td colspan="6" style="text-align: center; padding: 36px; color: #64748b;">
+                                        No venues configured yet.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Venue Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Add New Venue</h3>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/venues/create}" method="post">
+                        <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+
+                        <div class="form-group">
+                            <label class="form-label" for="name">Venue Name *</label>
+                            <input type="text" id="name" name="name" class="form-control" required placeholder="e.g. Auditorium Beta">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="location">Location / Building *</label>
+                            <input type="text" id="location" name="location" class="form-control" required placeholder="e.g. Science Block, 3rd Floor">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="capacity">Seating Capacity *</label>
+                            <input type="number" id="capacity" name="capacity" class="form-control" min="1" max="5000" required placeholder="e.g. 150">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="venueType">Venue Category</label>
+                            <select id="venueType" name="venueType" class="form-select">
+                                <option value="GENERAL">General</option>
+                                <option value="CONFERENCE">Conference Room</option>
+                                <option value="SEMINAR">Seminar Hall</option>
+                                <option value="LAB">Computer / Science Lab</option>
+                                <option value="AUDITORIUM">Auditorium</option>
+                                <option value="MEETING">Meeting Room</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="facilities">Amenities & Facilities</label>
+                            <input type="text" id="facilities" name="facilities" class="form-control" placeholder="e.g. Projector, AC, Sound System, Wi-Fi">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Create Venue (Audited)
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+</html>
